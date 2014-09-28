@@ -1,0 +1,4 @@
+roda-cj -v 1.0.4
+nokogiri -v 1.6.3.1
+opal -v 0.6.2
+faye -v 0.8.11
