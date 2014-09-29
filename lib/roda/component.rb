@@ -6,30 +6,43 @@ class Roda
     VERSION = "0.0.1"
 
     class << self
-      def inherited(subclass)
-        super
-        # We want to set the app for all sub classes
-        subclass.set_app app
+      if RUBY_ENGINE == 'ruby'
+        def inherited(subclass)
+          super
+          # We want to set the app for all sub classes
+          subclass.set_app app
+        end
       end
 
       # The name of the component
       def name _name
-        component_cache[:component][_name] = self.to_s
+        if server?
+          component_cache[:component][_name] = self.to_s
+        end
+
         @_name = _name
       end
 
       # The html source
       def html _html, &block
-        if _html.is_a? String
-          cache[:html] = File.read _html
-        else
-          cache[:html] = yield
+        if server?
+          if _html.is_a? String
+            cache[:html] = File.read _html
+          else
+            cache[:html] = yield
+          end
         end
       end
 
       # cache for class
       def cache
-        @_cache ||= Roda::RodaCache.new
+        if server?
+          @_cache ||= Roda::RodaCache.new
+        else
+          @_cache ||= {
+            dom: false
+          }
+        end
       end
 
       # set the current roda app
@@ -39,17 +52,37 @@ class Roda
 
       # roda app method
       def app
-        @_app
+        @_app ||= {}
       end
 
       # shortcut to comp opts
       def component_opts
-        app.component_opts
+        if server?
+          app.component_opts
+        else
+          {}
+        end
       end
 
       # shortcut to component_cache
       def component_cache
-        app.component_opts[:cache]
+        if server?
+          app.component_opts[:cache]
+        else
+          @_cache ||= {
+            component: {}
+          }
+        end
+      end
+
+      private
+
+      def server?
+        RUBY_ENGINE == 'ruby'
+      end
+
+      def client?
+        RUBY_ENGINE == 'opal'
       end
     end
 
@@ -58,7 +91,19 @@ class Roda
     end
 
     def dom
-      cache[:dom] ||= DOM.new cache[:html]
+      @_dom ||= DOM.new cache[:html]
     end
+
+    private
+
+    def server?
+      RUBY_ENGINE == 'ruby'
+    end
+    alias :server :server?
+
+    def client?
+      RUBY_ENGINE == 'opal'
+    end
+    alias :client :client?
   end
 end

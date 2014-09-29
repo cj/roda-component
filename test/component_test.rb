@@ -8,6 +8,7 @@ setup do
   # js = ''
   # js << env["roda/component"].to_s
   # js << env["layout"].to_s
+  # ap js
 end
 
 scope 'component' do

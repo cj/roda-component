@@ -1,5 +1,5 @@
-require 'opal'
-require 'faye'
+require 'roda/component'
+require 'json'
 
 class Roda
   module RodaPlugins
@@ -32,15 +32,36 @@ class Roda
         end
 
         def component name, options = {}, &block
+          action = options[:call] || 'display'
+
           # load component
           component = Object.const_get(
             component_opts[:cache][:component][name.to_sym]
           ).new self
 
           # call action
-          response = component.send(options[:call] || 'default', &block)
-          response.to_s
+          if component.method(action).parameters.length > 0
+            comp_response = component.send(action, options, &block)
+          else
+            comp_response = component.send(action, &block)
+          end
+
+          if comp_response.is_a? Roda::Component::DOM
+            content = comp_response.html
+          else
+            content = comp_response.to_s
+          end
+
+          js = <<-EOF
+            Document.ready? do
+              #{component.class}.new.#{action}(JSON.parse('#{options.to_json}'))
+            end
+          EOF
+
+          content + ("<script>" + Opal.compile(js) + "</script>")
         end
+        alias :comp :component
+        alias :roda_component :component
       end
 
       module ClassMethods
@@ -49,7 +70,7 @@ class Roda
         # affecting the parent class.
         def inherited(subclass)
           super
-          opts         = subclass.opts[:component] = component_opts.dup
+          opts         = component_opts.dup
           opts[:cache] = thread_safe_cache if opts[:cache]
         end
 
@@ -64,14 +85,29 @@ class Roda
         end
 
         def component_route_regex
-          Regexp.new(component_opts[:route] + '/(.*)(|\/.*)')
+          'assets/components'
         end
       end
 
       module RequestMethods
         def components
           on self.class.component_route_regex do |component, action|
-            scope.component(component, call: !action.empty?? action : 'default')
+            # scope.component(component, call: !action.empty?? action : 'display')
+            Opal::Processor.source_map_enabled = false
+            env = Opal::Environment.new
+            env.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
+            js = env['roda/component'].to_s
+
+            env.append_path scope.component_opts[:path]
+
+            Dir[scope.component_opts[:path] + '/**/*.rb'].each do |file|
+              file = file.gsub(scope.component_opts[:path] + '/', '')
+              js << env[file].to_s
+            end
+
+            response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'
+
+            js
           end
         end
       end

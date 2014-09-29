@@ -1,3 +1,5 @@
+require 'opal-jquery'
+
 unless RUBY_ENGINE == 'opal'
   require 'nokogiri'
 end
@@ -8,23 +10,49 @@ class Roda
       attr_accessor :dom
 
       def initialize html
-        @dom = Nokogiri::HTML html
+        if server?
+          @dom = Nokogiri::HTML html
+        else
+          @dom = Element
+        end
       end
 
-      def find string
-        @node = dom.at string
+      def find string, &block
+        if server?
+          @node = dom.at string
+        else
+          @node = dom.find string
+        end
+
+        if block
+          block.call @node
+        end
 
         self
       end
 
       def html= content
-        @node.inner_html = content
+        if server?
+          @node.inner_html = content
+        else
+          @node.html content
+        end
 
         self
       end
 
-      def to_s
-        @dom.to_s
+      def html
+        @node.to_html
+      end
+
+      private
+
+      def server? &block
+        RUBY_ENGINE == 'ruby'
+      end
+
+      def client?
+        RUBY_ENGINE == 'opal'
       end
     end
   end
