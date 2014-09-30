@@ -3,7 +3,9 @@ class LayoutComp < Roda::Component
   html './test/dummy/public/index.html'
 
   def display data, &block
-    dom.find('body').html yield
-    dom
+    if server?
+      dom.find('body').html(yield)
+      dom
+    end
   end
 end

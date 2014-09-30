@@ -28,9 +28,7 @@ class Roda
           end
         else
           if server?
-            block.call @node.first
-          else
-            block.call @node
+            @node = @node.first
           end
         end
 
@@ -44,7 +42,7 @@ class Roda
           @node.html content
         end
 
-        self
+        @node
       end
 
       def html content = false

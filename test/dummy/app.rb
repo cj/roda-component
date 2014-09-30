@@ -16,4 +16,6 @@ class TestApp < Roda
       end
     end
   end
+
+  Dir["./test/dummy/components/*.rb"].each { |file| require file }
 end

@@ -49,7 +49,7 @@ class Roda
           end
 
           if comp_response.is_a? Roda::Component::DOM
-            content = comp_response.html
+            content = comp_response.to_html
           else
             content = comp_response.to_s
           end
