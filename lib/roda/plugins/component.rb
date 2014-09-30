@@ -12,16 +12,16 @@ class Roda
           app.opts[:component] = opts.dup
         end
 
-        opts                       = app.opts[:component]
-        opts[:cache]               = app.thread_safe_cache if opts.fetch(:cache, true)
-        opts[:path]              ||= 'components'
-        opts[:route]             ||= 'components'
-        opts[:assets_path]       ||= 'assets/components'
-        opts[:class]             ||= Roda::Component
-        opts[:settings]          ||= {}
-        opts[:cache][:component] ||= {}
-        opts[:cache][:tmpl]      ||= {}
-        opts[:cache][:events]    ||= {}
+        opts                    = app.opts[:component]
+        opts[:cache]            = app.thread_safe_cache if opts.fetch(:cache, true)
+        opts[:path]           ||= 'components'
+        opts[:route]          ||= 'components'
+        opts[:assets_path]    ||= 'assets/components'
+        opts[:class]          ||= Roda::Component
+        opts[:settings]       ||= {}
+        opts[:class_name]     ||= {}
+        opts[:events]         ||= {}
+        opts[:cache][:tmpl]   ||= {}
 
         # Set the current app
         opts[:class].set_app app
@@ -37,7 +37,7 @@ class Roda
 
           # load component
           component = Object.const_get(
-            component_opts[:cache][:component][name.to_sym]
+            component_opts[:class_name][name.to_sym]
           ).new self
 
           # call action
@@ -59,6 +59,7 @@ class Roda
           # remove html and dom cache as we don't need that for the client
           cache.delete :html
           cache.delete :dom
+          cache.delete :cache
 
           cache   = Base64.encode64 cache.to_json
           options = Base64.encode64 options.to_json
@@ -66,7 +67,7 @@ class Roda
 
           js = <<-EOF
             Document.ready? do
-              c = $component[:"#{comp_name}"] = #{component.class}.new
+              c = $component_opts[:comp][:"#{comp_name}"] = #{component.class}.new
               c.cache = JSON.parse Base64.decode64('#{cache}')
               c.#{action}(JSON.parse(Base64.decode64('#{options}')))
             end

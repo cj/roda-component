@@ -1,17 +1,8 @@
-if RUBY_ENGINE == 'opal'
-  $events ||= {}
-end
-
 class Roda
   class Component
-    class Events < Struct.new(:klass, :cache)
+    class Events < Struct.new(:klass, :component_opts, :scope)
       def on name, options = {}, &block
-        if server?
-          class_events = (cache[:events][klass._name] ||= {})
-        else
-          class_events = ($events[klass._name] ||= {})
-        end
-
+        class_events = (events[klass._name] ||= {})
         event = (class_events[name] ||= [])
         event << [block, options]
       end
@@ -27,18 +18,14 @@ class Roda
 
       def component
         if server?
-          Object.const_get(cache[:component][klass._name]).new self
+          Object.const_get(component_opts[:class_name][klass._name]).new scope
         else
-          $component[klass._name]
+          component_opts[:comp][klass._name]
         end
       end
 
       def events
-        if RUBY_ENGINE == 'ruby'
-          cache[:events]
-        else
-          $events
-        end
+        component_opts[:events]
       end
 
       def server?

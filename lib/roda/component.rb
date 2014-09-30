@@ -5,8 +5,13 @@ require 'roda/component/dom'
 require 'roda/component/events'
 
 if RUBY_ENGINE == 'opal'
-  $component ||= {}
+  $component_opts ||= {
+    events: {},
+    comp: {},
+    cache: {}
+  }
 end
+
 
 class Roda
   class Component
@@ -32,7 +37,7 @@ class Roda
       # The name of the component
       def name _name
         if server?
-          component_cache[:component][_name] = self.to_s
+          component_opts[:class_name][_name] = self.to_s
         end
 
         @_name = _name
@@ -58,7 +63,7 @@ class Roda
       alias :clean :setup
 
       def events
-        @_events ||= Events.new self, component_cache
+        @_events ||= Events.new self, component_opts, false
       end
 
       # cache for class
@@ -95,20 +100,7 @@ class Roda
         if server?
           app.component_opts
         else
-          {}
-        end
-      end
-
-      # shortcut to component_cache
-      def component_cache
-        if server?
-          app.component_opts[:cache]
-        else
-          @_comp_cache ||= {
-            component: {},
-            tmpl: {},
-            events: {}
-          }
+          $component_opts
         end
       end
 
@@ -132,7 +124,7 @@ class Roda
     end
 
     def events
-      self.class.events
+      @_events ||= Events.new self.class, component_opts, scope
     end
 
     def dom
@@ -155,6 +147,10 @@ class Roda
       else
         DOM.new Element[cache[:tmpl][name][:html].dup]
       end
+    end
+
+    def component_opts
+      self.class.component_opts
     end
 
     private
