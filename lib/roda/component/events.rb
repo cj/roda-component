@@ -10,7 +10,7 @@ class Roda
       def trigger name, options = {}
         events[klass._name][name].each do |event|
           block, options = event
-          Instance.new(component).instance_exec options, &block
+          Instance.new(component, scope).instance_exec options, &block
         end
       end
 
@@ -42,12 +42,22 @@ class Roda
         def method_missing method, *args, &block
           if instance.respond_to? method, true
             instance.send method, *args, &block
-          elsif scope && scope.respond_to?(method, true)
+          elsif server && scope.respond_to?(method, true)
             scope.send method, *args, &block
           else
             super
           end
         end
+
+        def server?
+          RUBY_ENGINE == 'ruby'
+        end
+        alias :server :server?
+
+        def client?
+          RUBY_ENGINE == 'opal'
+        end
+        alias :client :client?
       end
     end
   end
