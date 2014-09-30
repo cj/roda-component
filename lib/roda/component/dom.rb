@@ -3,7 +3,7 @@ unless RUBY_ENGINE == 'opal'
 end
 
 class Roda
-  class Component < Struct.new(:scope)
+  class Component
     class DOM
       attr_accessor :dom
 

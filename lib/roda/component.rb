@@ -1,12 +1,22 @@
 require 'opal'
 require 'opal-jquery'
+require "base64"
 require 'roda/component/dom'
 require 'roda/component/events'
-require "base64"
+
+if RUBY_ENGINE == 'opal'
+  $component ||= {}
+end
 
 class Roda
   class Component
     VERSION = "0.0.1"
+
+    attr_accessor :scope
+
+    def initialize(scope = false)
+      @scope = scope
+    end
 
     class << self
       attr_accessor :_name
@@ -119,6 +129,10 @@ class Roda
 
     def cache= new_cache
       @_cache = new_cache
+    end
+
+    def events
+      self.class.events
     end
 
     def dom

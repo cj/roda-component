@@ -62,12 +62,13 @@ class Roda
 
           cache   = Base64.encode64 cache.to_json
           options = Base64.encode64 options.to_json
+          comp_name = component.class._name
 
           js = <<-EOF
             Document.ready? do
-              comp = #{component.class}.new
-              comp.cache = JSON.parse Base64.decode64('#{cache}')
-              comp.#{action}(JSON.parse(Base64.decode64('#{options}')))
+              c = $component[:"#{comp_name}"] = #{component.class}.new
+              c.cache = JSON.parse Base64.decode64('#{cache}')
+              c.#{action}(JSON.parse(Base64.decode64('#{options}')))
             end
           EOF
 
