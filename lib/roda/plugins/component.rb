@@ -1,5 +1,6 @@
 require 'roda/component'
 require 'json'
+require "base64"
 
 class Roda
   module RodaPlugins
@@ -15,15 +16,15 @@ class Roda
         opts[:cache]               = app.thread_safe_cache if opts.fetch(:cache, true)
         opts[:path]              ||= 'components'
         opts[:route]             ||= 'components'
+        opts[:assets_path]       ||= 'assets/components'
         opts[:class]             ||= Roda::Component
         opts[:settings]          ||= {}
         opts[:cache][:component] ||= {}
+        opts[:cache][:tmpl]      ||= {}
+        opts[:cache][:events]    ||= {}
 
         # Set the current app
         opts[:class].set_app app
-
-        # Load all components
-        Dir[opts[:path] + '/**/*.rb'].each { |file| require file }
       end
 
       module InstanceMethods
@@ -40,6 +41,7 @@ class Roda
           ).new self
 
           # call action
+          # TODO: make sure the single method parameter isn't a block
           if component.method(action).parameters.length > 0
             comp_response = component.send(action, options, &block)
           else
@@ -52,9 +54,20 @@ class Roda
             content = comp_response.to_s
           end
 
+          # grab a copy of the cache
+          cache = component.class.cache.dup
+          # remove html and dom cache as we don't need that for the client
+          cache.delete :html
+          cache.delete :dom
+
+          cache   = Base64.encode64 cache.to_json
+          options = Base64.encode64 options.to_json
+
           js = <<-EOF
             Document.ready? do
-              #{component.class}.new.#{action}(JSON.parse('#{options.to_json}'))
+              comp = #{component.class}.new
+              comp.cache = JSON.parse Base64.decode64('#{cache}')
+              comp.#{action}(JSON.parse(Base64.decode64('#{options}')))
             end
           EOF
 
@@ -85,26 +98,27 @@ class Roda
         end
 
         def component_route_regex
-          'assets/components'
+          component_opts[:assets_path]
         end
       end
 
       module RequestMethods
         def components
           on self.class.component_route_regex do |component, action|
-            # scope.component(component, call: !action.empty?? action : 'display')
+            # Process the ruby code into javascript
             Opal::Processor.source_map_enabled = false
             env = Opal::Environment.new
+            # Append the gems path
             env.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
             js = env['roda/component'].to_s
-
+            # Append the path to the components folder
             env.append_path scope.component_opts[:path]
-
+            # Loop through and and convert all the files to javascript
             Dir[scope.component_opts[:path] + '/**/*.rb'].each do |file|
               file = file.gsub(scope.component_opts[:path] + '/', '')
               js << env[file].to_s
             end
-
+            # Set the header to javascript
             response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'
 
             js

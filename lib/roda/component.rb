@@ -1,11 +1,16 @@
 require 'opal'
+require 'opal-jquery'
 require 'roda/component/dom'
+require 'roda/component/events'
+require "base64"
 
 class Roda
   class Component
     VERSION = "0.0.1"
 
     class << self
+      attr_accessor :_name
+
       if RUBY_ENGINE == 'ruby'
         def inherited(subclass)
           super
@@ -31,29 +36,49 @@ class Roda
           else
             cache[:html] = yield
           end
+
+          cache[:dom] = Nokogiri::HTML cache[:html]
         end
+      end
+
+      # setup your dom
+      def setup &block
+        block.call cache[:dom] if server?
+      end
+      alias :clean :setup
+
+      def events
+        @_events ||= Events.new self, component_cache
       end
 
       # cache for class
       def cache
-        if server?
-          @_cache ||= Roda::RodaCache.new
-        else
-          @_cache ||= {
-            dom: false
-          }
-        end
+        @_cache ||= {
+          tmpl: {}
+        }
       end
 
       # set the current roda app
       def set_app app
-        @_app = app
+        @_app = app.respond_to?(:new) ? app.new : app
       end
 
       # roda app method
       def app
         @_app ||= {}
       end
+
+      # We need to save the nokogiri dom and the raw html.
+      # the reason we ave the raw html is so that we can use it client side.
+      def tmpl name, dom, remove = true
+        cache[:tmpl][name] = {
+          dom: remove ? dom.remove : dom
+        }
+        cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_html
+        cache[:tmpl][name]
+      end
+      alias :add_tmpl :tmpl
+      alias :set_tmpl :tmpl
 
       # shortcut to comp opts
       def component_opts
@@ -69,8 +94,10 @@ class Roda
         if server?
           app.component_opts[:cache]
         else
-          @_cache ||= {
-            component: {}
+          @_comp_cache ||= {
+            component: {},
+            tmpl: {},
+            events: {}
           }
         end
       end
@@ -90,8 +117,30 @@ class Roda
       @_cache ||= self.class.cache.dup
     end
 
+    def cache= new_cache
+      @_cache = new_cache
+    end
+
     def dom
-      @_dom ||= DOM.new cache[:html]
+      d = cache[:dom] || begin
+        if server?
+          Nokogiri::HTML cache[:html]
+        else
+          Element
+        end
+      end
+
+      DOM.new d
+    end
+
+    # Grab the template from the cache, use the nokogiri dom or create a
+    # jquery element for server side
+    def tmpl name
+      if server?
+        DOM.new cache[:tmpl][name][:dom].dup
+      else
+        DOM.new Element[cache[:tmpl][name][:html].dup]
+      end
     end
 
     private
