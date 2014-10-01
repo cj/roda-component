@@ -1,7 +1,3 @@
-if RUBY_ENGINE == 'ruby'
-  require 'tilt'
-end
-
 require 'opal'
 require 'opal-jquery'
 require "base64"

@@ -1,3 +1,4 @@
+require 'tilt'
 require 'roda/component'
 require 'json'
 require "base64"
