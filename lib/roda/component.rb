@@ -1,3 +1,7 @@
+if RUBY_ENGINE == 'ruby'
+  require 'tilt'
+end
+
 require 'opal'
 require 'opal-jquery'
 require "base64"
@@ -15,8 +19,6 @@ end
 
 class Roda
   class Component
-    VERSION = "0.0.1"
-
     attr_accessor :scope
 
     def initialize(scope = false)
