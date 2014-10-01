@@ -2,25 +2,37 @@ class Roda
   class Component
     class Events < Struct.new(:klass, :component_opts, :scope)
       def on name, options = {}, &block
-        class_events = (events[klass._name] ||= {})
-        event = (class_events[name] ||= [])
-        event << [block, options]
+        class_name   = options.delete(:for) || klass._name
+        class_events = (events[class_name] ||= {})
+        event        = (class_events[name] ||= [])
+        event << [block, klass._name, options]
       end
 
       def trigger name, options = {}
+        content = ''
+
         events[klass._name][name].each do |event|
-          block, options = event
-          Instance.new(component, scope).instance_exec options, &block
+          block, comp, _ = event
+
+          response = Instance.new(component(comp), scope).instance_exec options, &block
+
+          if response.is_a? Roda::Component::DOM
+            content = response.to_html
+          elsif response.is_a? String
+            content = response.to_s
+          end
         end
+
+        content
       end
 
       private
 
-      def component
+      def component comp
         if server?
-          Object.const_get(component_opts[:class_name][klass._name]).new scope
+          Object.const_get(component_opts[:class_name][comp]).new scope
         else
-          component_opts[:comp][klass._name]
+          component_opts[:comp][comp]
         end
       end
 

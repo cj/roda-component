@@ -66,11 +66,18 @@ class Roda
         @_events ||= Events.new self, component_opts, false
       end
 
+      def on *args, &block
+        events.on(*args, &block)
+      end
+
       # cache for class
       def cache
-        @_cache ||= {
-          tmpl: {}
-        }
+        unless @_cache
+          @_cache ||= Roda::RodaCache.new
+          @_cache[:tmpl] = {}
+        end
+
+        @_cache
       end
 
       # set the current roda app
@@ -153,6 +160,10 @@ class Roda
       self.class.component_opts
     end
 
+    def trigger *args
+      events.trigger(*args)
+    end
+
     private
 
     def server?
@@ -164,5 +175,10 @@ class Roda
       RUBY_ENGINE == 'opal'
     end
     alias :client :client?
+  end
+
+  # This is just here to make things more cross compatible
+  if RUBY_ENGINE == 'opal'
+    RodaCache = Hash
   end
 end

@@ -16,7 +16,7 @@ class Roda
         opts[:cache]            = app.thread_safe_cache if opts.fetch(:cache, true)
         opts[:path]           ||= 'components'
         opts[:route]          ||= 'components'
-        opts[:assets_path]    ||= 'assets/components'
+        opts[:assets_route]   ||= 'assets/components'
         opts[:class]          ||= Roda::Component
         opts[:settings]       ||= {}
         opts[:class_name]     ||= {}
@@ -32,20 +32,48 @@ class Roda
           self.class.component_opts
         end
 
-        def component name, options = {}, &block
-          action = options[:call] || 'display'
-
-          # load component
-          component = Object.const_get(
+        def load_component name
+          Object.const_get(
             component_opts[:class_name][name.to_sym]
           ).new self
+        end
+
+        def load_component_js comp, action = :display
+          # grab a copy of the cache
+          cache = comp.class.cache.dup
+          # remove html and dom cache as we don't need that for the client
+          cache.delete :html
+          cache.delete :dom
+          cache.delete :cache
+
+          cache     = Base64.encode64 cache.to_json
+          options   = Base64.encode64 options.to_json
+          comp_name = comp.class._name
+
+          js = <<-EOF
+            Document.ready? do
+              unless $component_opts[:comp][:"#{comp_name}"]
+                c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
+                c.cache = JSON.parse Base64.decode64('#{cache}')
+                c.#{action}(JSON.parse(Base64.decode64('#{options}')))
+              end
+            end
+          EOF
+
+          ("<script>" + Opal.compile(js) + "</script>")
+        end
+
+        def component name, options = {}, &block
+          comp = load_component name
+
+          action = options[:call] || 'display'
 
           # call action
           # TODO: make sure the single method parameter isn't a block
-          if component.method(action).parameters.length > 0
-            comp_response = component.send(action, options, &block)
+          if comp.method(action).parameters.length > 0
+            comp_response = comp.send(action, options, &block)
           else
-            comp_response = component.send(action, &block)
+            comp_response = comp.send(action, &block)
           end
 
           if comp_response.is_a? Roda::Component::DOM
@@ -54,26 +82,7 @@ class Roda
             content = comp_response.to_s
           end
 
-          # grab a copy of the cache
-          cache = component.class.cache.dup
-          # remove html and dom cache as we don't need that for the client
-          cache.delete :html
-          cache.delete :dom
-          cache.delete :cache
-
-          cache   = Base64.encode64 cache.to_json
-          options = Base64.encode64 options.to_json
-          comp_name = component.class._name
-
-          js = <<-EOF
-            Document.ready? do
-              c = $component_opts[:comp][:"#{comp_name}"] = #{component.class}.new
-              c.cache = JSON.parse Base64.decode64('#{cache}')
-              c.#{action}(JSON.parse(Base64.decode64('#{options}')))
-            end
-          EOF
-
-          content + ("<script>" + Opal.compile(js) + "</script>")
+          content += load_component_js comp, action
         end
         alias :comp :component
         alias :roda_component :component
@@ -99,14 +108,20 @@ class Roda
           roda_class.component_opts
         end
 
+        def component_assets_route_regex
+          component_opts[:assets_route]
+        end
+
         def component_route_regex
-          component_opts[:assets_path]
+          Regexp.new(
+            component_opts[:route] + "/([a-zA-Z0-9_-]*)/([a-zA-Z0-9_-]*)/([a-zA-Z0-9_-]*)"
+          )
         end
       end
 
       module RequestMethods
         def components
-          on self.class.component_route_regex do |component, action|
+          on self.class.component_assets_route_regex do |component, action|
             # Process the ruby code into javascript
             Opal::Processor.source_map_enabled = false
             env = Opal::Environment.new
@@ -124,6 +139,19 @@ class Roda
             response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'
 
             js
+          end
+
+          on self.class.component_route_regex do |comp, type, action|
+            comp = scope.load_component(comp.to_sym)
+
+            case type
+            when 'call'
+              response.write comp.public_send action
+            when 'trigger'
+              response.write scope.load_component(comp.to_sym).events.trigger action.to_sym
+            end
+
+            response.write scope.load_component_js comp, action
           end
         end
       end
