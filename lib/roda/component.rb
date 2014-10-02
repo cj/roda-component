@@ -1,6 +1,12 @@
+unless RUBY_ENGINE == 'opal'
+  require 'tilt'
+end
+
 require 'opal'
 require 'opal-jquery'
 require "base64"
+require 'roda/component/faye'
+require 'roda/component/instance'
 require 'roda/component/dom'
 require 'roda/component/events'
 
@@ -11,7 +17,6 @@ if RUBY_ENGINE == 'opal'
     cache: {}
   }
 end
-
 
 class Roda
   class Component
@@ -34,11 +39,11 @@ class Roda
 
       # The name of the component
       def name _name
-        if server?
-          component_opts[:class_name][_name] = self.to_s
-        end
+        @_name = _name.to_s
 
-        @_name = _name
+        if server?
+          component_opts[:class_name][@_name] = self.to_s
+        end
       end
 
       # The html source
@@ -109,6 +114,14 @@ class Roda
         end
       end
 
+      def method_missing method, *args, &block
+        if server && app.respond_to?(method, true)
+          app.send method, *args, &block
+        else
+          super
+        end
+      end
+
       private
 
       def server?
@@ -133,15 +146,13 @@ class Roda
     end
 
     def dom
-      d = cache[:dom] || begin
+      @_dom ||= DOM.new cache[:dom].dup || begin
         if server?
           Nokogiri::HTML cache[:html]
         else
           Element
         end
       end
-
-      DOM.new d
     end
 
     # Grab the template from the cache, use the nokogiri dom or create a
@@ -160,6 +171,14 @@ class Roda
 
     def trigger *args
       events.trigger(*args)
+    end
+
+    def method_missing method, *args, &block
+      if server && scope.respond_to?(method, true)
+        scope.send method, *args, &block
+      else
+        super
+      end
     end
 
     private

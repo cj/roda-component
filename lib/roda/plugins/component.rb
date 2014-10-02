@@ -1,11 +1,26 @@
 require 'tilt'
+require 'faye'
+require 'faye/redis'
 require 'roda/component'
+require 'roda/component/faye'
 require 'json'
 require "base64"
 
 class Roda
   module RodaPlugins
     module Component
+      def self.load_dependencies(app, opts={})
+        Faye::WebSocket.load_adapter('thin')
+
+        app.plugin :csrf, header: 'X-CSRF-TOKEN'
+
+        app.use Faye::RackAdapter,
+          mount: '/faye',
+          timeout: 25,
+          extensions: [Roda::Component::Faye::CsrfProtection.new],
+          :engine  => { :type  => Faye::Redis }
+      end
+
       def self.configure(app, opts={})
         if app.opts[:component]
           app.opts[:component].merge!(opts)
@@ -35,7 +50,7 @@ class Roda
 
         def load_component name
           Object.const_get(
-            component_opts[:class_name][name.to_sym]
+            component_opts[:class_name][name.to_s]
           ).new self
         end
 
@@ -51,8 +66,37 @@ class Roda
           options   = Base64.encode64 options.to_json
           comp_name = comp.class._name
 
+          # client.addExtension({
+          #   outgoing: function(message, callback) {
+          #     message.ext = message.ext || {};
+          #     message.ext.csrfToken = $('meta[name=csrf-token]').attr('content');
+          #     callback(message);
+          #   }
+          # });
           js = <<-EOF
             Document.ready? do
+              unless $faye
+                $faye = Roda::Component::Faye.new('/faye')
+
+                $faye.set_header 'X-CSRF-TOKEN', Element.find('meta[name=_csrf]').attr('content')
+
+                $faye.add_extension({
+                  outgoing: ->(message, block) {
+                    message = Native(message)
+                    message.ext = message.ext || {}
+                    message.ext.csrfToken = Element.find('meta[name=_csrf]').attr('content')
+
+                    block.call message
+                  }
+                })
+
+                $faye.subscribe '/foo' do |message|
+                  puts '===================='
+                  puts message
+                  puts '===================='
+                end
+              end
+
               unless $component_opts[:comp][:"#{comp_name}"]
                 c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
                 c.cache = JSON.parse Base64.decode64('#{cache}')
@@ -67,14 +111,19 @@ class Roda
         def component name, options = {}, &block
           comp = load_component name
 
-          action = options[:call] || 'display'
+          action  = options[:call]    || :display
+          trigger = options[:trigger] || false
 
           # call action
           # TODO: make sure the single method parameter isn't a block
-          if comp.method(action).parameters.length > 0
-            comp_response = comp.send(action, options, &block)
+          if trigger
+            comp_response = comp.trigger trigger, options
           else
-            comp_response = comp.send(action, &block)
+            if comp.method(action).parameters.length > 0
+              comp_response = comp.send(action, options, &block)
+            else
+              comp_response = comp.send(action, &block)
+            end
           end
 
           if comp_response.is_a? Roda::Component::DOM
@@ -84,6 +133,8 @@ class Roda
           end
 
           content += load_component_js comp, action
+
+          content
         end
         alias :comp :component
         alias :roda_component :component
@@ -143,16 +194,12 @@ class Roda
           end
 
           on self.class.component_route_regex do |comp, type, action|
-            comp = scope.load_component(comp.to_sym)
-
             case type
             when 'call'
-              response.write comp.public_send action
+              scope.roda_component(comp, call: action)
             when 'trigger'
-              response.write scope.load_component(comp.to_sym).events.trigger action.to_sym
+              scope.roda_component(comp, trigger: action)
             end
-
-            response.write scope.load_component_js comp, action
           end
         end
       end
