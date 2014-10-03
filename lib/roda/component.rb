@@ -24,6 +24,12 @@ class Roda
 
     def initialize(scope = false)
       @scope = scope
+
+      if client?
+        $faye.subscribe "/components/#{self.class._name}" do |msg|
+          `window.console.log(#{msg})`
+        end
+      end
     end
 
     class << self
@@ -146,12 +152,12 @@ class Roda
     end
 
     def dom
-      @_dom ||= DOM.new cache[:dom].dup || begin
-        if server?
+      if server?
+        @_dom ||= DOM.new cache[:dom].dup || begin
           Nokogiri::HTML cache[:html]
-        else
-          Element
         end
+      else
+        @_dom ||= DOM.new(Element)
       end
     end
 

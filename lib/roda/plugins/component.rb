@@ -3,6 +3,7 @@ require 'faye'
 require 'faye/redis'
 require 'roda/component'
 require 'roda/component/faye'
+require 'roda/component/ohm'
 require 'json'
 require "base64"
 
@@ -13,12 +14,6 @@ class Roda
         Faye::WebSocket.load_adapter('thin')
 
         app.plugin :csrf, header: 'X-CSRF-TOKEN'
-
-        app.use Faye::RackAdapter,
-          mount: '/faye',
-          timeout: 25,
-          extensions: [Roda::Component::Faye::CsrfProtection.new],
-          :engine  => { :type  => Faye::Redis }
       end
 
       def self.configure(app, opts={})
@@ -28,16 +23,33 @@ class Roda
           app.opts[:component] = opts.dup
         end
 
-        opts                    = app.opts[:component]
-        opts[:cache]            = app.thread_safe_cache if opts.fetch(:cache, true)
-        opts[:path]           ||= 'components'
-        opts[:route]          ||= 'components'
-        opts[:assets_route]   ||= 'assets/components'
-        opts[:class]          ||= Roda::Component
-        opts[:settings]       ||= {}
-        opts[:class_name]     ||= {}
-        opts[:events]         ||= {}
-        opts[:cache][:tmpl]   ||= {}
+        opts                     = app.opts[:component]
+        opts[:cache]             = app.thread_safe_cache if opts.fetch(:cache, true)
+        opts[:path]            ||= 'components'
+        opts[:route]           ||= 'components'
+        opts[:assets_route]    ||= 'assets/components'
+        opts[:class]           ||= Roda::Component
+        opts[:settings]        ||= {}
+        opts[:class_name]      ||= {}
+        opts[:events]          ||= {}
+        opts[:user_model]      ||= 'User'
+        opts[:redis_namespace] ||= 'roda:component:'
+        opts[:cache][:tmpl]    ||= {}
+
+        app.use(Faye::RackAdapter, {
+          mount: '/faye',
+          extensions: [
+            Roda::Component::Faye::CsrfProtection.new,
+            Roda::Component::Faye::ChannelManager.new
+          ],
+          engine: {
+            type:      Faye::Redis,
+            uri:       opts[:redis_uri],
+            namespace: opts[:redis_namespace]
+          }
+        })
+
+        Roda::Component::Ohm.redis = Redic.new opts[:redis_uri]
 
         # Set the current app
         opts[:class].set_app app
@@ -66,13 +78,6 @@ class Roda
           options   = Base64.encode64 options.to_json
           comp_name = comp.class._name
 
-          # client.addExtension({
-          #   outgoing: function(message, callback) {
-          #     message.ext = message.ext || {};
-          #     message.ext.csrfToken = $('meta[name=csrf-token]').attr('content');
-          #     callback(message);
-          #   }
-          # });
           js = <<-EOF
             Document.ready? do
               unless $faye
@@ -82,19 +87,15 @@ class Roda
 
                 $faye.add_extension({
                   outgoing: ->(message, block) {
-                    message = Native(message)
-                    message.ext = message.ext || {}
-                    message.ext.csrfToken = Element.find('meta[name=_csrf]').attr('content')
+                    message = %x{
+                      message = \#{message}
+                      message.ext = message.ext || {};
+                      message.ext.csrfToken = $('meta[name=_csrf]').attr('content');
+                    }
 
                     block.call message
                   }
                 })
-
-                $faye.subscribe '/foo' do |message|
-                  puts '===================='
-                  puts message
-                  puts '===================='
-                end
               end
 
               unless $component_opts[:comp][:"#{comp_name}"]
@@ -126,15 +127,19 @@ class Roda
             end
           end
 
-          if comp_response.is_a? Roda::Component::DOM
-            content = comp_response.to_html
+          if !env['RODA_COMPONENT_FROM_FAYE']
+            if comp_response.is_a? Roda::Component::DOM
+              content = comp_response.to_html
+            else
+              content = comp_response.to_s
+            end
+
+            content += load_component_js comp, action
+
+            content
           else
-            content = comp_response.to_s
+            comp_response
           end
-
-          content += load_component_js comp, action
-
-          content
         end
         alias :comp :component
         alias :roda_component :component

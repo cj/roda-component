@@ -24,6 +24,9 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "faye-redis"
   spec.add_runtime_dependency "tilt"
   spec.add_runtime_dependency "rack_csrf"
+  spec.add_runtime_dependency "ohm"
+  spec.add_runtime_dependency "ohm-contrib"
+  spec.add_runtime_dependency "ohm-sorted"
   spec.add_development_dependency "bundler", "~> 1.7"
   spec.add_development_dependency "rake", "~> 10.0"
 end
