@@ -11,15 +11,19 @@ if RUBY_ENGINE == 'opal'
         end
 
         alias_native :subscribe
+        alias_native :unsubscribe
         alias_native :publish
         alias_native :bind
+        alias_native :cancel
         alias_native :on
+        alias_native :then
         alias_native :set_header, :setHeader
         alias_native :add_extension, :addExtension
       end
     end
   end
 else
+  require 'faye'
   require 'roda/component/ohm'
   require 'roda/component/models/user'
   require 'roda/component/models/channel'
@@ -54,6 +58,8 @@ else
           # /components/:id/:comp/:action
           def outgoing(message, request, callback)
             app = get_app request
+
+            # message[:data] = app.roda_component(:auth, call: :cow) || false
 
             ap '====OUTGOING===='
             ap message

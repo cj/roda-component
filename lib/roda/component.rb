@@ -1,5 +1,6 @@
 unless RUBY_ENGINE == 'opal'
   require 'tilt'
+  require 'awesome_print'
 end
 
 require 'opal'
@@ -16,6 +17,23 @@ if RUBY_ENGINE == 'opal'
     comp: {},
     cache: {}
   }
+end
+
+module Overrideable
+  def self.included(c)
+    c.instance_methods(false).each do |m|
+      m = m.to_sym
+      c.class_eval %Q{
+        alias #{m}_original #{m}
+        def #{m}(*args, &block)
+          puts "Foo"
+          result = #{m}_original(*args, &block)
+          puts "Bar"
+          result
+        end
+      }
+    end
+  end
 end
 
 class Roda
@@ -41,6 +59,31 @@ class Roda
           # We want to set the app for all sub classes
           subclass.set_app app
         end
+      end
+
+      def on_server &block
+        m = Module.new(&block)
+
+        m.public_instance_methods(false).each do |meth|
+          define_method "#{meth}" do |*args, &blk|
+            if server?
+              super()
+            else
+              name  = self.class._name
+
+              $faye.subscribe("/components/#{name}/call/#{meth}") do |d|
+                $faye.unsubscribe("/components/#{name}/call/#{meth}")
+                blk.call d
+              end.then do
+                $faye.publish("/components/#{name}/call/#{meth}", {moo: 'cow'})
+              end
+
+              true
+            end
+          end
+        end
+
+        include m
       end
 
       # The name of the component
@@ -84,6 +127,7 @@ class Roda
         unless @_cache
           @_cache ||= Roda::RodaCache.new
           @_cache[:tmpl] = {}
+          @_cache[:server_methods] = []
         end
 
         @_cache
@@ -164,10 +208,14 @@ class Roda
     # Grab the template from the cache, use the nokogiri dom or create a
     # jquery element for server side
     def tmpl name
-      if server?
-        DOM.new cache[:tmpl][name][:dom].dup
+      if t = cache[:tmpl][name]
+        if server?
+          DOM.new t[:dom].dup
+        else
+          DOM.new Element[t[:html].dup]
+        end
       else
-        DOM.new Element[cache[:tmpl][name][:html].dup]
+        false
       end
     end
 
