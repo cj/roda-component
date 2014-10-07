@@ -10,11 +10,11 @@ class Roda
 
       # this is a hack because it seems like display is a ruby object method
       # when doing method(:display) it gives #<Method: # Roda::Component::Instance(Kernel)#display>
-      def display *args
-        method_missing(*args)
+      def display *args, &block
+        method_missing('display', *args, &block)
       end
 
-      def method_missing method = 'display', *args, &block
+      def method_missing method, *args, &block
         if instance.respond_to? method, true
           instance.send method, *args, &block
         elsif server && scope && scope.respond_to?(method, true)
