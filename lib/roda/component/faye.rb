@@ -6,6 +6,8 @@ if RUBY_ENGINE == 'opal'
       class Faye
         include Native
 
+        attr_accessor :client_id
+
         def initialize url
           super `new Faye.Client(#{url})`
         end
