@@ -6,12 +6,6 @@ if RUBY_ENGINE == 'opal'
       class Faye
         include Native
 
-        attr_accessor :client_id
-
-        def initialize url
-          super `new Faye.Client(#{url})`
-        end
-
         alias_native :subscribe
         alias_native :unsubscribe
         alias_native :publish
@@ -21,6 +15,56 @@ if RUBY_ENGINE == 'opal'
         alias_native :then
         alias_native :set_header, :setHeader
         alias_native :add_extension, :addExtension
+
+        def initialize url
+          super `new Faye.Client(#{url})`
+          set_header 'X-CSRF-TOKEN', Element.find('meta[name=_csrf]').attr('content')
+          add_extension({
+            incoming: ->(message, block) { incoming message, block },
+            outgoing: ->(message, block) { outgoing message, block }
+          })
+        end
+
+        def public_id
+          @public_id ||= generate_id
+        end
+
+        def private_id
+          @private_id ||= generate_id
+        end
+
+        def incoming message, block
+          msg = Native(message)
+
+          if (!@public_id && !@private_id) && msg[:channel] == '/meta/handshake'
+            subscribe "/components/incoming/#{private_id}/#{public_id}" do |data|
+              data     = Native(data)
+              event_id = data[:event_id]
+              body     = Element['body']
+
+              body.trigger(event_id, data[:local], data)
+              body.off event_id
+            end
+          end
+
+          block.call message
+        end
+
+        def outgoing message, block
+          message = %x{
+            message = #{message}
+            message.ext = message.ext || {};
+            message.ext.csrfToken = $('meta[name=_csrf]').attr('content');
+          }
+          block.call message
+        end
+
+        private
+
+        def generate_id
+          o = [('a'..'z'), ('A'..'Z'), (0..9)].map { |i| i.to_a }.flatten
+          (0...50).map { o[rand(o.length)] }.join
+        end
       end
     end
   end
@@ -48,27 +92,36 @@ else
 
         class ChannelManager
           def incoming(message, request, callback)
-            app = get_app request
+            app = get_app(request)
 
-            ap '====INCOMING===='
-            ap message
-            ap '================'
+            if data = message['data']
+              case data['type']
+              when 'event'
+                options = { local: data['local'] }
+                data['event_type'] == 'call' \
+                  ? options[:call] = data['event_method'] \
+                  : options[:trigger] = data['event_method']
+
+                message['data']['local'] = app.roda_component(:"#{data['name']}", options)
+                message['channel']       = message['channel'].gsub(/outgoing/, 'incoming')
+              end
+            end
 
             callback.call message
           end
 
           # /components/:id/:comp/:action
-          def outgoing(message, request, callback)
-            app = get_app request
-
-            # message[:data] = app.roda_component(:auth, call: :cow) || false
-
-            ap '====OUTGOING===='
-            ap message
-            ap '================'
-
-            callback.call message
-          end
+          # def outgoing(message, request, callback)
+          #   app = get_app request
+          #
+          #   # message[:data] = app.roda_component(:auth, call: :cow) || false
+          #
+          #   ap '====OUTGOING===='
+          #   ap message
+          #   ap '================'
+          #
+          #   callback.call message
+          # end
 
           def get_app request
             request.env['RODA_COMPONENT_FROM_FAYE'] = true
@@ -77,49 +130,6 @@ else
             a
           end
         end
-
-        # class ChannelManager
-        #   def incoming(message, request, callback)
-        #     ap '====INCOMING===='
-        #     ap message
-        #     ap '================'
-        #
-        #     model = Component.component_opts[:user_model]
-        #     id    = request.session[model]
-        #     ap request.session
-        #
-        #     if id.present?
-        #       @user = Models::User.find(model_id: id).first || begin
-        #         Models::User.create(model_id: id)
-        #       end
-        #     else
-        #       @user = 'nil'
-        #     end
-        #
-        #     callback.call message
-        #   end
-        #
-        #   def current_user
-        #     @current_user ||= begin
-        #       model = Component.component_opts[:user_model]
-        #       model = Object.const_get(model)
-        #
-        #       if @user
-        #         model.find @user.id
-        #       else
-        #         model.new first_name: 'Guest', last_name: 'User'
-        #       end
-        #     end
-        #   end
-        #
-        #   def outgoing(message, request, callback)
-        #     ap '====INCOMING===='
-        #     ap message
-        #     ap '================'
-        #
-        #     callback.call message
-        #   end
-        # end
       end
     end
   end

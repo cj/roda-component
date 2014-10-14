@@ -82,31 +82,6 @@ class Roda
             Document.ready? do
               unless $faye
                 $faye = Roda::Component::Faye.new('/faye')
-
-                $faye.set_header 'X-CSRF-TOKEN', Element.find('meta[name=_csrf]').attr('content')
-
-                $faye.add_extension({
-                  incoming: ->(message, block) {
-                    msg = Native(`\#{message}`)
-
-                    case msg['channel']
-                    when '/meta/handshake'
-                      $faye.client_id = msg[:clientId]
-                      # $faye.subscribe("/components/$faye.client_id")
-                    end
-
-                    block.call message
-                  },
-                  outgoing: ->(message, block) {
-                    message = %x{
-                      message = \#{message}
-                      message.ext = message.ext || {};
-                      message.ext.csrfToken = $('meta[name=_csrf]').attr('content');
-                    }
-
-                    block.call message
-                  }
-                })
               end
 
               unless $component_opts[:comp][:"#{comp_name}"]

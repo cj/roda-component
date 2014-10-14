@@ -69,14 +69,21 @@ class Roda
             if server?
               super()
             else
-              name  = self.class._name
+              name     = self.class._name
+              event_id = "comp-event-#{$faye.generate_id}"
 
-              $faye.subscribe("/components/#{name}/call/#{meth}") do |d|
-                $faye.unsubscribe("/components/#{name}/call/#{meth}")
-                blk.call d
-              end.then do
-                $faye.publish("/components/#{name}/call/#{meth}", {moo: 'cow'})
+              Element['body'].on event_id do |event, local, data|
+                blk.call local, event, data
               end
+
+              $faye.publish("/components/outgoing/#{$faye.private_id}/#{$faye.public_id}", {
+                name: name,
+                type: 'event',
+                event_type: 'call',
+                event_method: meth,
+                event_id: event_id,
+                local: args.first || nil
+              })
 
               true
             end
