@@ -87,9 +87,7 @@ class Roda
               unless $component_opts[:comp][:"#{comp_name}"]
                 c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
                 c.cache = JSON.parse Base64.decode64('#{cache}')
-                if defined? c.#{action}
-                  c.#{action}(JSON.parse(Base64.decode64('#{options}')))
-                end
+                c.#{action}(JSON.parse(Base64.decode64('#{options}')))
               end
             end
           EOF

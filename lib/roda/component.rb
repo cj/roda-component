@@ -62,13 +62,13 @@ class Roda
       end
 
       def on_server &block
-        m = Module.new(&block)
+        if server?
+          yield
+        else
+          m = Module.new(&block)
 
-        m.public_instance_methods(false).each do |meth|
-          define_method "#{meth}" do |*args, &blk|
-            if server?
-              super()
-            else
+          m.public_instance_methods(false).each do |meth|
+            define_method "#{meth}" do |*args, &blk|
               name     = self.class._name
               event_id = "comp-event-#{$faye.generate_id}"
 
@@ -88,9 +88,9 @@ class Roda
               true
             end
           end
-        end
 
-        include m
+          include m
+        end
       end
 
       # The name of the component
