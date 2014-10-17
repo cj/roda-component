@@ -80,7 +80,7 @@ class Roda
 
           js = <<-EOF
             unless $faye
-              $faye = Roda::Component::Faye.new(`document.location.origin` + '/faye')
+              $faye = Roda::Component::Faye.new('/faye')
             end
 
             unless $component_opts[:comp][:"#{comp_name}"]
