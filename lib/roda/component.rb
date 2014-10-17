@@ -1,10 +1,11 @@
+require 'opal'
+require 'opal-jquery'
+
 unless RUBY_ENGINE == 'opal'
   require 'tilt'
   require 'awesome_print'
 end
 
-require 'opal'
-require 'opal-jquery'
 require "base64"
 require 'roda/component/faye'
 require 'roda/component/instance'
@@ -17,23 +18,6 @@ if RUBY_ENGINE == 'opal'
     comp: {},
     cache: {}
   }
-end
-
-module Overrideable
-  def self.included(c)
-    c.instance_methods(false).each do |m|
-      m = m.to_sym
-      c.class_eval %Q{
-        alias #{m}_original #{m}
-        def #{m}(*args, &block)
-          puts "Foo"
-          result = #{m}_original(*args, &block)
-          puts "Bar"
-          result
-        end
-      }
-    end
-  end
 end
 
 class Roda

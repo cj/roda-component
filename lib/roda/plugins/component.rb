@@ -79,16 +79,14 @@ class Roda
           comp_name = comp.class._name
 
           js = <<-EOF
-            Document.ready? do
-              unless $faye
-                $faye = Roda::Component::Faye.new('/faye')
-              end
+            unless $faye
+              $faye = Roda::Component::Faye.new(`document.location.origin` + '/faye')
+            end
 
-              unless $component_opts[:comp][:"#{comp_name}"]
-                c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
-                c.cache = JSON.parse Base64.decode64('#{cache}')
-                c.#{action}(JSON.parse(Base64.decode64('#{options}')))
-              end
+            unless $component_opts[:comp][:"#{comp_name}"]
+              c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
+              c.cache = JSON.parse Base64.decode64('#{cache}')
+              c.#{action}(JSON.parse(Base64.decode64('#{options}')))
             end
           EOF
 
@@ -169,7 +167,9 @@ class Roda
             Opal::Processor.source_map_enabled = false
             env = Opal::Environment.new
             # Append the gems path
+            env.append_path Dir.pwd
             env.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
+            env.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
             js = env['roda/component'].to_s
             # Append the path to the components folder
             env.append_path scope.component_opts[:path]
