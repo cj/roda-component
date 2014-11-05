@@ -13,7 +13,7 @@ class Roda
       def self.load_dependencies(app, opts={})
         Faye::WebSocket.load_adapter('thin')
 
-        app.plugin :csrf, header: 'X-CSRF-TOKEN'
+        # app.plugin :csrf, header: 'X-CSRF-TOKEN'
       end
 
       def self.configure(app, opts={})
@@ -111,7 +111,7 @@ class Roda
             end
           end
 
-          if !env['RODA_COMPONENT_FROM_FAYE']
+          if defined?(env) && !env['RODA_COMPONENT_FROM_FAYE']
             if comp_response.is_a? Roda::Component::DOM
               content = comp_response.to_html
             else
