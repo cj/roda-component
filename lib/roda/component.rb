@@ -156,7 +156,7 @@ class Roda
       end
 
       def method_missing method, *args, &block
-        if server && app.respond_to?(method, true)
+        if server? && app.respond_to?(method, true)
           app.send method, *args, &block
         else
           super
@@ -219,7 +219,7 @@ class Roda
     end
 
     def method_missing method, *args, &block
-      if server && scope.respond_to?(method, true)
+      if server? && scope.respond_to?(method, true)
         scope.send method, *args, &block
       else
         super

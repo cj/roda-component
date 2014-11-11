@@ -104,14 +104,20 @@ class Roda
           if trigger
             comp_response = comp.trigger trigger, options
           else
-            if comp.method(action).parameters.length > 0
-              comp_response = comp.send(action, options, &block)
+            # We want to make sure it's not a method that already exists in ruba
+            # otherwise that would give us a false positive.
+            if comp.respond_to?(action) && !"#{comp.method(action)}"[/\(Kernel\)/]
+              if comp.method(action).parameters.length > 0
+                comp_response = comp.send(action, options, &block)
+              else
+                comp_response = comp.send(action, &block)
+              end
             else
-              comp_response = comp.send(action, &block)
+              fail "##{action} doesn't exist for #{comp.class}"
             end
           end
 
-          if defined?(env) && !env['RODA_COMPONENT_FROM_FAYE']
+          if req && !req.env['RODA_COMPONENT_FROM_FAYE']
             if comp_response.is_a? Roda::Component::DOM
               content = comp_response.to_html
             else
