@@ -49,7 +49,7 @@ class Roda
           }
         })
 
-        Roda::Component::Ohm.redis = Redic.new opts[:redis_uri]
+        Roda::Component::Ohm.redis = Redic.new opts[:redis_uri] || 'redis://localhost:6379'
 
         # Set the current app
         opts[:class].set_app app
@@ -117,7 +117,7 @@ class Roda
             end
           end
 
-          if req && !req.env['RODA_COMPONENT_FROM_FAYE']
+          if request && !request.env['RODA_COMPONENT_FROM_FAYE']
             if comp_response.is_a? Roda::Component::DOM
               content = comp_response.to_html
             else

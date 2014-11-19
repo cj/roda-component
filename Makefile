@@ -6,30 +6,17 @@ GEM=$(PROJECT)-$(VERSION).gem
 .PHONY: install package publish test server $(GEM)
 
 define install_bs
-	which bs || (wget https://raw.githubusercontent.com/educabilia/bs/master/bin/bs && chmod +x bs && sudo mv bs /usr/local/bin)
-
-	@if [ -s .gs ]; then \
-		true; \
-	else \
-		mkdir .gs; \
-		touch .env; \
-		echo 'GEM_HOME=$(PWD)/.gs' >> .env; \
-		echo 'GEM_PATH=$(PWD)/.gs' >> .env; \
-		echo 'PATH=$(PWD)/.gs/bin:$$PATH' >> .env; \
-		echo 'RACK_ENV=test' >> .env.test; \
-	fi;
-
-	bs gem list dep-cj -i || bs gem install dep-cj
-	gem list cutest-cj -i || gem install cutest-cj
+	gem list bundler -i || gem install bundler
 endef
 
 install:
 	$(call install_bs)
-	bs dep install
-	bs gem cleanup
+	bundle config --local path .bundle
+	gem update roda-bin
+	bundle
 
 test:
-	bs env $$(cat .env.test) cutest test/**/*_test.rb
+	bundle exec pry-test --async
 
 package: $(GEM)
 

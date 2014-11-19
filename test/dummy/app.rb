@@ -1,3 +1,7 @@
+require 'tilt'
+require 'roda'
+require 'roda/component'
+
 class TestApp < Roda
   plugin :component, {
     path: './test/dummy/components'

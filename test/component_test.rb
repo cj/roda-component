@@ -1,11 +1,13 @@
 require_relative 'helper'
 
-scope 'component' do
+class ComponentTest < PryTest::Test
+  before { @app = App.new(self) }
+
   test 'app' do
-    assert body('/app')['working']
+    assert @app.body('/app')['working']
   end
 
   test 'render' do
-    assert body('/')['head']
+    assert @app.body('/')['head']
   end
 end

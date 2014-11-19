@@ -18,8 +18,8 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency "opal"
-  spec.add_runtime_dependency "opal-jquery"
+  spec.add_runtime_dependency "opal", "~> 0.7.0.beta2"
+  spec.add_runtime_dependency "opal-jquery", "~> 0.3.0.beta1"
   spec.add_runtime_dependency "faye"
   spec.add_runtime_dependency "faye-redis"
   spec.add_runtime_dependency "tilt"
@@ -27,6 +27,17 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "ohm"
   spec.add_runtime_dependency "ohm-contrib"
   spec.add_runtime_dependency "ohm-sorted"
+  spec.add_runtime_dependency "nokogiri"
   spec.add_development_dependency "bundler", "~> 1.7"
   spec.add_development_dependency "rake", "~> 10.0"
+  spec.add_development_dependency "pry-test", "~> 0.5.2"
+  spec.add_development_dependency "roda", "~> 1.1.0"
+  spec.add_development_dependency "thin"
+  spec.add_development_dependency "pry"
+  spec.add_development_dependency "pry-rescue"
+  spec.add_development_dependency "pry-byebug"
+  spec.add_development_dependency "pry-stack_explorer"
+  spec.add_development_dependency "pry-doc"
+  spec.add_development_dependency "awesome_print"
+  spec.add_development_dependency "hirb"
 end

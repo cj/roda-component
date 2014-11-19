@@ -3,7 +3,6 @@ require 'opal-jquery'
 
 unless RUBY_ENGINE == 'opal'
   require 'tilt'
-  require 'awesome_print'
 end
 
 require "base64"

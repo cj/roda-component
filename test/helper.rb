@@ -1,20 +1,15 @@
 lib = File.expand_path('../../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
-require 'roda'
-require 'roda/component'
 require_relative 'dummy/app'
 
-before do
-  @app = TestApp
-end
+class App
+  attr_reader :test
 
-after do
-  @app = nil
-end
-
-module Kernel
-  private
+  def initialize(test, app = false)
+    @app  = app || TestApp
+    @test = test
+  end
 
   def app(type=nil, &block)
     case type

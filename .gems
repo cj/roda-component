@@ -3,3 +3,6 @@ nokogiri -v 1.6.3.1
 opal -v 0.6.2
 opal-jquery -v 0.2.0
 faye -v 0.8.11
+ohm -v 2.0.1
+ohm-contrib -v 2.0.0.rc2
+ohm-sorted -v 0.4.1
