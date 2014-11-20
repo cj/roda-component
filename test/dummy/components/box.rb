@@ -11,7 +11,7 @@ class BoxComponent < Roda::Component
     end if server?
   end
 
-  on :click, -> { dom.find('#show-box a.show') } do |el|
+  on :click, '#show-box a.show' do |el|
     el.remove
     dom.find('body').append tmpl(:box).html
   end

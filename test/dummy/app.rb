@@ -9,6 +9,7 @@ class TestApp < Roda
   path = DUMMY_PATH
 
   plugin :component, { path: path }
+  plugin :assets, { path: "#{path}/..public" }
 
   route do |r|
     r.components

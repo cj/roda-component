@@ -2,7 +2,7 @@ class Roda
   class Component
     class Events < Struct.new(:klass, :component_opts, :scope)
       def on name, options = {}, &block
-        if !options.is_a? Proc
+        if !options.is_a? String
           limit_if = options.delete(:if) || []
           limit_if = [limit_if] unless limit_if.is_a? Array
 
@@ -27,11 +27,10 @@ class Roda
         return unless e = events[klass._name]
 
         e[:_jquery_events].each do |event|
-          block, comp, options, name = event
+          block, comp, selector, name = event
 
-          element = Component::Instance.new(component(comp), scope).instance_exec(&options)
-          Document.on name, element do |evt|
-            Component::Instance.new(component(comp), scope).instance_exec element, evt, &block
+          Document.on name, selector do |evt|
+            Component::Instance.new(component(comp), scope).instance_exec evt.current_target, evt, &block
           end
         end
       end

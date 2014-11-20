@@ -14,7 +14,7 @@ class ComponentTest < PryTest::Test
 
   test 'tmpl' do
     @page.visit '/box'
-    # box div should not be in the html
+    # box div should not be in the html as it's a tmpl (template)
     assert !@page.html['Hello, Box!']
     # clicking the show link should show the box div and remove the show link
     @page.click_link 'Show'

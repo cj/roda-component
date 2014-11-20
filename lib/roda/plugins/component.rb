@@ -87,9 +87,7 @@ class Roda
               c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
               c.cache = JSON.parse Base64.decode64('#{cache}')
               c.#{action}(JSON.parse(Base64.decode64('#{options}')))
-              Document.ready? do
-                c.events.trigger_jquery_events
-              end
+              c.events.trigger_jquery_events
             end
           EOF
 

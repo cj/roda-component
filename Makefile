@@ -1,11 +1,15 @@
-GEMSPEC=$(shell ls *.gemspec | head -1)
-VERSION=$(shell ruby -rubygems -e 'puts Gem::Specification.load("$(GEMSPEC)").version')
-PROJECT=$(shell ruby -rubygems -e 'puts Gem::Specification.load("$(GEMSPEC)").name')
-GEM=$(PROJECT)-$(VERSION).gem
-
+# GEMSPEC=$(shell ls *.gemspec | head -1)
+# VERSION=$(shell ruby -rubygems -e 'puts Gem::Specification.load("$(GEMSPEC)").version')
+# PROJECT=$(shell ruby -rubygems -e 'puts Gem::Specification.load("$(GEMSPEC)").name')
+# GEM=$(PROJECT)-$(VERSION).gem
+#
 .PHONY: install package publish test server $(GEM)
 
 define install_bs
+	gem list bundler -i || gem install bundler
+endef
+
+define gem_paths
 	gem list bundler -i || gem install bundler
 endef
 
@@ -14,6 +18,9 @@ install:
 	bundle config --local path .bundle
 	gem update roda-bin
 	bundle
+
+server:
+	(cd test/dummy && bundle exec roda s)
 
 test:
 	bundle exec pry-test --async
