@@ -2,6 +2,7 @@ require 'opal'
 require 'opal-jquery'
 
 unless RUBY_ENGINE == 'opal'
+  require 'roda/component/oga'
   require 'tilt'
 end
 
@@ -89,12 +90,16 @@ class Roda
       def html _html, &block
         if server?
           if _html.is_a? String
-            cache[:html] = File.read _html
+            if _html[%r{\A./}]
+              cache[:html] = File.read _html
+            else
+              cache[:html] = File.read "#{component_opts[:path]}/#{_html}"
+            end
           else
             cache[:html] = yield
           end
 
-          cache[:dom] = Nokogiri::HTML cache[:html]
+          cache[:dom] = Oga.parse_html cache[:html]
         end
       end
 
@@ -133,13 +138,11 @@ class Roda
         @_app ||= {}
       end
 
-      # We need to save the nokogiri dom and the raw html.
+      # We need to save the oga dom and the raw html.
       # the reason we ave the raw html is so that we can use it client side.
       def tmpl name, dom, remove = true
-        cache[:tmpl][name] = {
-          dom: remove ? dom.remove : dom
-        }
-        cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_html
+        cache[:tmpl][name] = { dom: remove ? dom.remove : dom }
+        cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_xml
         cache[:tmpl][name]
       end
       alias :add_tmpl :tmpl
@@ -188,7 +191,7 @@ class Roda
     def dom
       if server?
         @_dom ||= DOM.new cache[:dom].dup || begin
-          Nokogiri::HTML cache[:html]
+          Oga.parse_html cache[:html]
         end
       else
         @_dom ||= DOM.new(Element)

@@ -3,56 +3,18 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require_relative 'dummy/app'
 
-class App
-  attr_reader :test
+require 'capybara/poltergeist'
 
-  def initialize(test, app = false)
-    @app  = app || TestApp
-    @test = test
-  end
-
-  def app(type=nil, &block)
-    case type
-    when :new
-      @app = _app{route(&block)}
-    when :bare
-      @app = _app(&block)
-    when Symbol
-      @app = _app do
-        plugin type
-        route(&block)
-      end
-    else
-      @app ||= _app{route(&block)}
-    end
-  end
-
-  def req(path='/', env={})
-    if path.is_a?(Hash)
-      env = path
-    else
-      env['PATH_INFO'] = path
-    end
-
-    env = {"REQUEST_METHOD" => "GET", "PATH_INFO" => "/", "SCRIPT_NAME" => ""}.merge(env)
-    @app.call(env)
-  end
-
-  def status(path='/', env={})
-    req(path, env)[0]
-  end
-
-  def header(name, path='/', env={})
-    req(path, env)[1][name]
-  end
-
-  def body(path='/', env={})
-    req(path, env)[2].join
-  end
-
-  def _app(&block)
-    c = Class.new(Roda)
-    c.class_eval(&block)
-    c
-  end
+Capybara.register_driver :poltergeist do |app|
+  Capybara::Poltergeist::Driver.new(app, {
+    phantomjs: ENV['PHANTOMJS_PATH'] || '/bin/phantomjs'
+  })
 end
+
+Capybara.app = TestApp
+# use port 8080 if it's open
+if system("lsof -i:8080", out: '/dev/null')
+  Capybara.server_port = 8080
+end
+Capybara.default_driver    = :poltergeist
+Capybara.javascript_driver = :poltergeist

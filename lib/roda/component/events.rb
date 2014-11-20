@@ -2,18 +2,38 @@ class Roda
   class Component
     class Events < Struct.new(:klass, :component_opts, :scope)
       def on name, options = {}, &block
-        limit_if = options.delete(:if) || []
-        limit_if = [limit_if] unless limit_if.is_a? Array
+        if !options.is_a? Proc
+          limit_if = options.delete(:if) || []
+          limit_if = [limit_if] unless limit_if.is_a? Array
 
-        class_name   = options.delete(:for) || klass._name
-        class_events = (events[class_name] ||= {})
-        event        = (class_events[name.to_s] ||= [])
+          class_name   = options.delete(:for) || klass._name
+          class_events = (events[class_name] ||= {})
+          event        = (class_events[name.to_s] ||= [])
 
-        # remove the type, if we have an on if and it isn't in the engine_type
-        if limit_if.any? && !limit_if.include?(engine_type.to_sym)
-          block = Proc.new {}
+          # remove the type, if we have an on if and it isn't in the engine_type
+          if limit_if.any? && !limit_if.include?(engine_type.to_sym)
+            block = Proc.new {}
+          end
+          event << [block, klass._name, options]
+        elsif client?
+          class_name   = klass._name
+          class_events = (events[class_name] ||= {})
+          event        = (class_events[:_jquery_events] ||= [])
+          event        << [block, class_name, options, name]
         end
-        event << [block, klass._name, options]
+      end
+
+      def trigger_jquery_events
+        return unless e = events[klass._name]
+
+        e[:_jquery_events].each do |event|
+          block, comp, options, name = event
+
+          element = Component::Instance.new(component(comp), scope).instance_exec(&options)
+          Document.on name, element do |evt|
+            Component::Instance.new(component(comp), scope).instance_exec element, evt, &block
+          end
+        end
       end
 
       def trigger name, options = {}
@@ -25,7 +45,7 @@ class Roda
           response = Component::Instance.new(component(comp), scope).instance_exec options, &block
 
           if response.is_a? Roda::Component::DOM
-            content = response.to_html
+            content = response.to_xml
           elsif response.is_a? String
             content = response
           end

@@ -87,6 +87,9 @@ class Roda
               c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
               c.cache = JSON.parse Base64.decode64('#{cache}')
               c.#{action}(JSON.parse(Base64.decode64('#{options}')))
+              Document.ready? do
+                c.events.trigger_jquery_events
+              end
             end
           EOF
 
@@ -119,7 +122,7 @@ class Roda
 
           if request && !request.env['RODA_COMPONENT_FROM_FAYE']
             if comp_response.is_a? Roda::Component::DOM
-              content = comp_response.to_html
+              content = comp_response.to_xml
             else
               content = comp_response.to_s
             end
@@ -171,18 +174,18 @@ class Roda
           on self.class.component_assets_route_regex do |component, action|
             # Process the ruby code into javascript
             Opal::Processor.source_map_enabled = false
-            env = Opal::Environment.new
+            e = Opal::Environment.new
             # Append the gems path
-            env.append_path Dir.pwd
-            env.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
-            env.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
-            js = env['roda/component'].to_s
+            e.append_path Dir.pwd
+            e.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
+            e.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
+            js = e['roda/component'].to_s
             # Append the path to the components folder
-            env.append_path scope.component_opts[:path]
+            e.append_path scope.component_opts[:path]
             # Loop through and and convert all the files to javascript
             Dir[scope.component_opts[:path] + '/**/*.rb'].each do |file|
               file = file.gsub(scope.component_opts[:path] + '/', '')
-              js << env[file].to_s
+              js << e[file].to_s
             end
             # Set the header to javascript
             response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'

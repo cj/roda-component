@@ -1,5 +1,5 @@
 unless RUBY_ENGINE == 'opal'
-  require 'nokogiri'
+  require 'oga'
 end
 
 class Roda
@@ -32,7 +32,11 @@ class Roda
           end
         end
 
-        self
+        if server?
+          self
+        else
+          @node
+        end
       end
 
       def html= content
@@ -48,13 +52,17 @@ class Roda
       def html content = false
         if !content
           if server?
-            @node ? @node.to_html : dom.to_html
+            @node ? @node.to_xml : dom.to_html
           else
             @node ? @node.html : dom.html
           end
         else
           self.html = content
         end
+      end
+
+      def node
+        @node
       end
 
       # This allows you to use all the nokogiri or opal jquery methods if a
