@@ -9,17 +9,30 @@ class TestApp < Roda
   path = DUMMY_PATH
 
   plugin :component, { path: path }
-  plugin :assets, { path: "#{path}/..public" }
+  plugin :assets, {
+    path: "#{path}/../public",
+    css_dir: '',
+    css: [
+      'css/bootstrap.min.css',
+      'css/freelancer.css',
+      'font-awesome-4.1.0/css/font-awesome.min.css'
+    ],
+    js: [ 'jquery.js' ]
+  }
 
   route do |r|
-    r.components
-
-    r.on 'assets/jquery.js' do
-      response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'
-      File.read "#{path}/../public/jquery.js"
+    r.on('img') do
+      r.run Rack::Directory.new("#{path}/../public/img")
     end
 
-    r.on('box') { component(:box) }
+    r.on('assets/font-awesome-4.1.0/fonts') do
+      r.run Rack::Directory.new("#{path}/../public/font-awesome-4.1.0/fonts")
+    end
+
+    r.components
+    r.assets
+
+    r.on('theme') { component(:theme) }
 
     r.root do
       component(:layout) do

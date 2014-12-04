@@ -16,6 +16,12 @@ module Oga
       def inner_html=(html)
         @children = HTML::Parser.new(html).parse.children
       end
+
+      def add_child html
+        HTML::Parser.new(html).parse.children.each do |node|
+          children << node
+        end
+      end
     end
   end
 end

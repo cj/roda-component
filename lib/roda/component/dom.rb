@@ -52,7 +52,7 @@ class Roda
       def html content = false
         if !content
           if server?
-            @node ? @node.to_xml : dom.to_html
+            @node.inner_html
           else
             @node ? @node.html : dom.html
           end

@@ -99,7 +99,7 @@ class Roda
             cache[:html] = yield
           end
 
-          cache[:dom] = Oga.parse_html cache[:html]
+          cache[:dom] = DOM.new Oga.parse_html(cache[:html])
         end
       end
 
@@ -190,13 +190,14 @@ class Roda
 
     def dom
       if server?
-        @_dom ||= DOM.new cache[:dom].dup || begin
+        @_dom ||= cache[:dom].dup || begin
           Oga.parse_html cache[:html]
         end
       else
         @_dom ||= DOM.new(Element)
       end
     end
+    alias_method :element, :dom
 
     # Grab the template from the cache, use the nokogiri dom or create a
     # jquery element for server side

@@ -2,9 +2,7 @@ require_relative 'helper'
 
 class ComponentTest < PryTest::Test
 
-  before do
-    @page = Capybara::Session.new(:poltergeist, TestApp)
-  end
+  before { @page = Capybara::Session.new(:poltergeist, TestApp) }
 
   test 'render' do
     @page.visit '/'
@@ -13,13 +11,15 @@ class ComponentTest < PryTest::Test
   end
 
   test 'tmpl' do
-    @page.visit '/box'
-    # box div should not be in the html as it's a tmpl (template)
-    assert !@page.html['Hello, Box!']
-    # clicking the show link should show the box div and remove the show link
-    @page.click_link 'Show'
-    assert @page.html['Hello, Box!']
-    assert !@page.html['Show']
+    @page.visit '/theme'
+    # Make sure the about title isn't there
+    assert !@page.html['"about-title"']
+    # Clicking the link should show the about title
+    @page.click_link 'Show About Title'
+    # Remove the link from the dom after it's clicked
+    assert !@page.html['Show About Title']
+    # Should see the title
+    assert @page.html['"about-title"']
   end
 
   after { Capybara.reset_sessions! }
