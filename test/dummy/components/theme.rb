@@ -23,22 +23,32 @@ class BoxComponent < Roda::Component
     end if server?
   end
 
-  def test
-    puts 'testing'
-  end
-
   # add message to chat box
   on :ready, '.box-footer button' do |el|
     chat_box = el.closest('.box').find('#chat-box')
-    footer   = chat_box.closest('.box').find('.box-footer')
-    input    = footer.find('input')
+    box      = chat_box.closest('.box')
 
-    footer.find('button').on 'click' do
-      test
-      row = tmpl(:chat_box_row)
-      chat_box.append row.dom
-
-      puts input.val
+    box.find('.box-footer button').on('click') { add_chat_row_to box }
+    box.find('.box-footer input').on('keydown') do |evt|
+      if evt.which == 13
+        add_chat_row_to box
+      end
     end
+  end
+
+  private
+
+  def add_chat_row_to box
+    chat_box = box.find('#chat-box')
+    input    = box.find('.box-footer input')
+
+    row = tmpl(:chat_box_row)
+    # we don't need attachments
+    row.find('.attachment').remove
+    row.find('.message').html = input.val
+    input.prop 'value', ''
+
+    chat_box.append row.dom
+    chat_box.scroll_top(chat_box.height + 2000)
   end
 end

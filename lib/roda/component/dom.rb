@@ -5,6 +5,7 @@ class Roda
 
       def initialize html
         @raw_html = html
+
         if server?
           @dom = Component::HTML(html.dup)
         else
