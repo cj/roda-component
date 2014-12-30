@@ -20,7 +20,7 @@ install:
 	bundle
 
 server:
-	(cd test/dummy && bundle exec roda s)
+	(cd test/dummy && bundle exec thin start -p 8080)
 
 test:
 	bundle exec pry-test --async

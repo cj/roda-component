@@ -84,10 +84,12 @@ class Roda
             end
 
             unless $component_opts[:comp][:"#{comp_name}"]
-              c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
-              c.cache = JSON.parse Base64.decode64('#{cache}')
-              c.#{action}(JSON.parse(Base64.decode64('#{options}')))
-              c.events.trigger_jquery_events
+              Document.ready? do
+                c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
+                c.instance_variable_set(:@_cache, JSON.parse(Base64.decode64('#{cache}')))
+                c.#{action}(JSON.parse(Base64.decode64('#{options}')))
+                c.events.trigger_jquery_events
+              end
             end
           EOF
 
@@ -172,18 +174,25 @@ class Roda
           on self.class.component_assets_route_regex do |component, action|
             # Process the ruby code into javascript
             Opal::Processor.source_map_enabled = false
-            e = Opal::Environment.new
-            # Append the gems path
-            e.append_path Dir.pwd
-            e.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
-            e.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
-            js = e['roda/component'].to_s
-            # Append the path to the components folder
-            e.append_path scope.component_opts[:path]
+
+            opal = Opal::Server.new do |s|
+              # Append the gems path
+              s.append_path Dir.pwd
+              s.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
+              s.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
+              # Append the path to the components folder
+              s.append_path scope.component_opts[:path]
+
+              s.main = 'application'
+            end
+
+            sprockets = opal.sprockets
+
+            js = sprockets['roda/component'].to_s
             # Loop through and and convert all the files to javascript
             Dir[scope.component_opts[:path] + '/**/*.rb'].each do |file|
               file = file.gsub(scope.component_opts[:path] + '/', '')
-              js << e[file].to_s
+              js << sprockets[file].to_s
             end
             # Set the header to javascript
             response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'

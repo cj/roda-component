@@ -4,3 +4,5 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'roda-bin'
+gem "oga", ">= 0.2.0", require: false
+gem "nokogiri", "~> 1.6.5", require: false

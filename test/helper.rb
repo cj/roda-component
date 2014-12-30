@@ -12,8 +12,9 @@ Capybara.register_driver :poltergeist do |app|
 end
 
 Capybara.app = TestApp
+
 # use port 8080 if it's open
-if system("lsof -i:8080", out: '/dev/null')
+unless system("lsof -i:8080", out: '/dev/null')
   Capybara.server_port = 8080
 end
 Capybara.default_driver    = :poltergeist

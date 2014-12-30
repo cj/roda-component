@@ -1,14 +1,15 @@
-unless RUBY_ENGINE == 'opal'
-  require 'oga'
-end
-
 class Roda
   class Component
     class DOM
-      attr_accessor :dom
+      attr_accessor :dom, :raw_html
 
-      def initialize dom
-        @dom = dom
+      def initialize html
+        @raw_html = html
+        if server?
+          @dom = Component::HTML(html.dup)
+        else
+          @dom = Element[html.dup]
+        end
       end
 
       def find string, &block
@@ -62,7 +63,7 @@ class Roda
       end
 
       def node
-        @node
+        @node || ''
       end
 
       # This allows you to use all the nokogiri or opal jquery methods if a

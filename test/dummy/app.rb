@@ -1,44 +1,40 @@
+unless defined? RACK_ENV
+  ENV.fetch('LC_ALL') {'en_US.utf8'}.freeze
+  RACK_ENV   = ENV.fetch('RACK_ENV') { 'test' }.freeze
+  DUMMY_PATH = "#{Dir.pwd}/" << (RACK_ENV == 'test' ? 'test/dummy/components' : 'components').freeze
+end
+
 require 'tilt'
 require 'roda'
+require 'nokogiri'
 require 'roda/component'
-
-RACK_ENV   = ENV.fetch('RACK_ENV') { 'test' }
-DUMMY_PATH = "#{Dir.pwd}/" << (RACK_ENV == 'test' ? 'test/dummy/components' : 'components')
 
 class TestApp < Roda
   path = DUMMY_PATH
 
   plugin :component, { path: path }
   plugin :assets, {
-    path: "#{path}/../public",
+    path: "#{path}/../public/AdminLTE-master",
     css_dir: '',
-    css: [
-      'css/bootstrap.min.css',
-      'css/freelancer.css',
-      'font-awesome-4.1.0/css/font-awesome.min.css'
-    ],
-    js: [ 'jquery.js' ]
+    # css: [ 'css/AdminLTE.css'],
+    # js: [ 'jquery.js' ]
   }
 
   route do |r|
-    r.on('img') do
-      r.run Rack::Directory.new("#{path}/../public/img")
-    end
-
-    r.on('assets/font-awesome-4.1.0/fonts') do
-      r.run Rack::Directory.new("#{path}/../public/font-awesome-4.1.0/fonts")
-    end
-
     r.components
     r.assets
 
-    r.on('theme') { component(:theme) }
-
-    r.root do
-      component(:layout) do
-        'Hello, World!'
-      end
+    %w(js css img).each do |type|
+      r.on(type) { r.run Rack::Directory.new("#{path}/../public/AdminLTE-master/#{type}") }
     end
+
+    r.on('assets') { r.run Rack::Directory.new("#{path}/../public/AdminLTE-master") }
+
+    r.on('assets/font-awesome-4.1.0/fonts') do
+      r.run Rack::Directory.new("#{path}/../public/AdminLTE-master/font-awesome-4.1.0/fonts")
+    end
+
+    r.root { component(:theme) }
   end
 end
 

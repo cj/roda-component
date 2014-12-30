@@ -2,8 +2,10 @@ require 'opal'
 require 'opal-jquery'
 
 unless RUBY_ENGINE == 'opal'
-  require 'roda/component/oga'
   require 'tilt'
+  if defined? Oga
+    require 'roda/component/oga'
+  end
 end
 
 require "base64"
@@ -13,16 +15,21 @@ require 'roda/component/dom'
 require 'roda/component/events'
 
 if RUBY_ENGINE == 'opal'
+  class Element
+    alias_native :val
+  end
+
   $component_opts ||= {
     events: {},
     comp: {},
-    cache: {}
+    cache: {},
+    tmpl: {}
   }
 end
 
 class Roda
   class Component
-    attr_accessor :scope
+    attr_accessor :scope, :cache
 
     def initialize(scope = false)
       @scope = scope
@@ -78,7 +85,10 @@ class Roda
       end
 
       # The name of the component
-      def name _name
+      alias_method :name_original, :name
+      def name(_name = nil)
+        return name_original unless _name
+
         @_name = _name.to_s
 
         if server?
@@ -99,7 +109,17 @@ class Roda
             cache[:html] = yield
           end
 
-          cache[:dom] = DOM.new Oga.parse_html(cache[:html])
+          cache[:dom] = DOM.new(cache[:html])
+        end
+      end
+
+      def HTML raw_html
+        if defined? Oga
+          Oga.parse_html(raw_html)
+        elsif defined? Nokogiri
+          Nokogiri::HTML(raw_html)
+        else
+          warn 'No HTML parsing lib loaded.  Please require Nokogiri or Oga'
         end
       end
 
@@ -180,19 +200,14 @@ class Roda
       @_cache ||= self.class.cache.dup
     end
 
-    def cache= new_cache
-      @_cache = new_cache
-    end
-
     def events
       @_events ||= Events.new self.class, component_opts, scope
     end
 
     def dom
       if server?
-        @_dom ||= cache[:dom].dup || begin
-          Oga.parse_html cache[:html]
-        end
+        # TODO: duplicate cache[:dom] so we don't need to parse all the html again
+        @_dom ||= DOM.new(cache[:dom].dom.to_s)
       else
         @_dom ||= DOM.new(Element)
       end
@@ -203,11 +218,7 @@ class Roda
     # jquery element for server side
     def tmpl name
       if t = cache[:tmpl][name]
-        if server?
-          DOM.new t[:dom].dup
-        else
-          DOM.new Element[t[:html].dup]
-        end
+        DOM.new t[:html]
       else
         false
       end

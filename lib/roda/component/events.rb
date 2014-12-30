@@ -29,8 +29,14 @@ class Roda
         e[:_jquery_events].each do |event|
           block, comp, selector, name = event
 
-          Document.on name, selector do |evt|
-            Component::Instance.new(component(comp), scope).instance_exec evt.current_target, evt, &block
+          name = name.to_s
+
+          if name != 'ready'
+            Document.on name, selector do |evt|
+              Component::Instance.new(component(comp), scope).instance_exec evt.current_target, evt, &block
+            end
+          else
+            Component::Instance.new(component(comp), scope).instance_exec Document.find(selector), nil, &block
           end
         end
       end
