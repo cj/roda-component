@@ -12,8 +12,6 @@ class Roda
     module Component
       def self.load_dependencies(app, opts={})
         Faye::WebSocket.load_adapter('thin')
-
-        # app.plugin :csrf, header: 'X-CSRF-TOKEN'
       end
 
       def self.configure(app, opts={})

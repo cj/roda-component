@@ -36,6 +36,8 @@ if RUBY_ENGINE == 'opal'
         def incoming message, block
           msg = Native(message)
 
+          `console.log(#{msg})`
+
           if (!@public_id && !@private_id) && msg[:channel] == '/meta/handshake'
             subscribe "/components/incoming/#{private_id}/#{public_id}" do |data|
               data     = Native(data)
@@ -94,12 +96,16 @@ else
           def incoming(message, request, callback)
             app = get_app(request)
 
+            ap '====INCOMING===='
+            ap message
+            ap '================'
+
             if data = message['data']
               case data['type']
               when 'event'
                 options = { local: data['local'] }
                 data['event_type'] == 'call' \
-                  ? options[:call] = data['event_method'] \
+                  ? options[:call]    = data['event_method'] \
                   : options[:trigger] = data['event_method']
 
                 message['data']['local'] = app.roda_component(:"#{data['name']}", options)
@@ -111,17 +117,17 @@ else
           end
 
           # /components/:id/:comp/:action
-          # def outgoing(message, request, callback)
-          #   app = get_app request
-          #
-          #   # message[:data] = app.roda_component(:auth, call: :cow) || false
-          #
-          #   ap '====OUTGOING===='
-          #   ap message
-          #   ap '================'
-          #
-          #   callback.call message
-          # end
+          def outgoing(message, request, callback)
+            app = get_app request
+
+            # message[:data] = app.roda_component(:auth, call: :cow) || false
+
+            # ap '====OUTGOING===='
+            # ap message
+            # ap '================'
+
+            callback.call message
+          end
 
           def get_app request
             request.env['RODA_COMPONENT_FROM_FAYE'] = true

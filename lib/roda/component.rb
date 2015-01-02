@@ -3,6 +3,7 @@ require 'opal-jquery'
 
 unless RUBY_ENGINE == 'opal'
   require 'tilt'
+
   if defined? Oga
     require 'roda/component/oga'
   end
@@ -35,7 +36,9 @@ class Roda
       @scope = scope
 
       if client?
+        puts self.class._name
         $faye.subscribe "/components/#{self.class._name}" do |msg|
+          puts 'meh'
           `window.console.log(#{msg})`
         end
       end
@@ -134,7 +137,11 @@ class Roda
       end
 
       def on *args, &block
-        events.on(*args, &block)
+        if args.first.to_s != 'server'
+          events.on(*args, &block)
+        else
+          on_server &block
+        end
       end
 
       # cache for class
@@ -245,12 +252,12 @@ class Roda
     def server?
       RUBY_ENGINE == 'ruby'
     end
-    alias :server :server?
+    alias_method :server, :server?
 
     def client?
       RUBY_ENGINE == 'opal'
     end
-    alias :client :client?
+    alias_method :client, :client?
   end
 
   # This is just here to make things more cross compatible

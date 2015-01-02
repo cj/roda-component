@@ -7,12 +7,15 @@ class BoxComponent < Roda::Component
     dom.at('#revenue-chart').xpath('//div[contains(@class,"nav-tabs-custom")]').first['style'] = 'display: none;'
     # dom.css('script[src*=morris]').remove
 
-    # set chat box and grab chatbox row
-    box      = dom.find('#chat-box').ancestors('.box').first
-    chat_box = dom.at('#chat-box')
-    tmpl :chat_box_row, box.css('.item').first
+    ## set chat box and grab chatbox row
+    chat_box  = dom.at('#chat-box')
+    container = chat_box.ancestors('.box').first
+    # grab first fake message for our template
+    tmpl :chat_box_row, chat_box.css('.item').first
+    # remove all other fake messages
     chat_box.css('.item').remove
-    box.at('box-tools').remove
+    # remove the chat box tools
+    container.at('.box-tools').remove
   end
 
   def display data, &block
@@ -21,38 +24,66 @@ class BoxComponent < Roda::Component
     end if server?
   end
 
+  on :chat_row_added, socket: true do |msg|
+    puts 'moo'
+    # add_chat_row msg
+  end
+
+  on :server do
+    def test
+      puts 'called from browser'
+      'defined on server'
+    end
+  end
+
   # add message to chat box
   on :ready, '.box-footer button' do |el|
+    # grab the box that contains the chat box
     box = el.closest('.box').find('#chat-box').closest('.box')
 
-    box.find('.box-footer button').on('click') { add_chat_row_to box }
+    # when the click the + button add a row
+    box.find('.box-footer button').on('click') { add_chat_row }
+    # when they hit enter on the input add a row
     box.find('.box-footer input').on('keydown') do |evt|
-      # on enter add chat row
       if evt.which == 13
-        add_chat_row_to box
+        add_chat_row
       end
     end
   end
 
   private
 
-  def add_chat_row_to box
+  def add_chat_row msg = false
+    box      = Element.find('#chat-box').closest('.box')
     chat_box = box.find('#chat-box')
     input    = box.find('.box-footer input')
-    value    = input.val
+    msg      = msg ? msg : input.val
     row      = tmpl(:chat_box_row)
+    ig       = box.find('.input-group')
+    classes  = ig['class'].split(' ')
 
-    if value.length > 0
+    test do |res|
+      puts "ran server method test, response: #{res}"
+    end
+
+    if msg.length > 0
       # we don't need attachments
       row.find('.attachment').remove
-      row.find('.message').html = value
+      row.find('.message').html = msg
+
+      trigger :chat_row_added, msg
+
       input.prop 'value', ''
 
       chat_box.append row.dom
       # make sure we always scroll to the bottom
-      chat_box.scroll_top(chat_box.height + 99999)
+      chat_box.scroll_top `chat_box[0].scrollHeight`
+      classes.delete 'has-error'
     else
-      # error message: input can't be blank
+      # give the input group an error class
+      classes << 'has-error'
     end
+
+    ig['class'] = classes.join ' '
   end
 end

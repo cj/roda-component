@@ -45,14 +45,24 @@ class Roda
         content = ''
 
         events[klass._name][name.to_s].each do |event|
-          block, comp, _ = event
+          block, comp, options = event
 
-          response = Component::Instance.new(component(comp), scope).instance_exec options, &block
+          if !options[:socket]
+            response = Component::Instance.new(component(comp), scope).instance_exec options, &block
 
-          if response.is_a? Roda::Component::DOM
-            content = response.to_xml
-          elsif response.is_a? String
-            content = response
+            if response.is_a? Roda::Component::DOM
+              content = response.to_xml
+            elsif response.is_a? String
+              content = response
+            end
+          else
+            $faye.publish("/components/#{klass._name}", {
+              name: klass._name,
+              type: 'event',
+              event_type: 'call',
+              event_method: name.to_s,
+              local: options
+            })
           end
         end
 

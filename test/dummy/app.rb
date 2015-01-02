@@ -12,6 +12,11 @@ require 'roda/component'
 class TestApp < Roda
   path = DUMMY_PATH
 
+  use Rack::Session::Cookie,
+    key:    "test:roda:components",
+    secret: "na"
+
+  plugin :csrf, header: 'X-CSRF-TOKEN'
   plugin :component, { path: path }
   plugin :assets, {
     path: "#{path}/../public/AdminLTE-master",

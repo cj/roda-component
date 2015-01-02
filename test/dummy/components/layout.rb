@@ -13,6 +13,9 @@ class LayoutComp < Roda::Component
 
   def display data, &block
     if server?
+      # we need this so that roda-components can authenticate your sessions
+      dom.at_css('head').add_child csrf_metatag
+
       dom.find('body').html(yield)
 
       dom

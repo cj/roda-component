@@ -1,3 +1,5 @@
+require 'pry'
+require 'awesome_print'
 require 'rack/unreloader'
 require './constants'
 require './app'
