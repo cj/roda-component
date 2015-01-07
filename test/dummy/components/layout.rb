@@ -1,7 +1,10 @@
 class LayoutComp < Roda::Component
   name :layout
-  html "../public/AdminLTE-master/index.html"
+  html "../public/chat/index.html"
   setup do |dom|
+    # remove hard coded links as we are adding them in using the assets plugin.
+    dom.css('head > link').remove
+    # add require css and javascript
     dom.at_css('head').add_child assets(:css)
     dom.at_css('body').add_child assets(:js)
     dom.at_css('html').add_child <<-EOF

@@ -4,6 +4,7 @@ unless defined? RACK_ENV
   DUMMY_PATH = "#{Dir.pwd}/" << (RACK_ENV == 'test' ? 'test/dummy/components' : 'components').freeze
 end
 
+require 'sass'
 require 'tilt'
 require 'roda'
 require 'nokogiri'
@@ -19,10 +20,20 @@ class TestApp < Roda
   plugin :csrf, header: 'X-CSRF-TOKEN'
   plugin :component, { path: path }
   plugin :assets, {
-    path: "#{path}/../public/AdminLTE-master",
+    path: "#{path}/../public/chat",
     css_dir: '',
-    # css: [ 'css/AdminLTE.css'],
-    # js: [ 'jquery.js' ]
+    css: [
+      'bower/open-sans-fontface/open-sans.css',
+      'bower/font-awesome/css/font-awesome.css',
+      'bower/jScrollPane/style/jquery.jscrollpane.css',
+      'css/style.css',
+      'css/login.scss'
+    ],
+    js: [
+      'bower/jquery/dist/jquery.js',
+      'bower/jScrollPane/script/jquery.mousewheel.js',
+      'bower/jScrollPane/script/jquery.jscrollpane.js'
+    ]
   }
 
   route do |r|
@@ -30,16 +41,16 @@ class TestApp < Roda
     r.assets
 
     %w(js css img).each do |type|
-      r.on(type) { r.run Rack::Directory.new("#{path}/../public/AdminLTE-master/#{type}") }
+      r.on(type) { r.run Rack::Directory.new("#{path}/../public/chat/#{type}") }
     end
 
-    r.on('assets') { r.run Rack::Directory.new("#{path}/../public/AdminLTE-master") }
+    r.on('assets') { r.run Rack::Directory.new("#{path}/../public/chat") }
 
     r.on('assets/font-awesome-4.1.0/fonts') do
-      r.run Rack::Directory.new("#{path}/../public/AdminLTE-master/font-awesome-4.1.0/fonts")
+      r.run Rack::Directory.new("#{path}/../public/chat/font-awesome-4.1.0/fonts")
     end
 
-    r.root { component(:theme) }
+    r.root { component(:chat) }
   end
 end
 

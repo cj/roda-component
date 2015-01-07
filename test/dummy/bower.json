@@ -1,0 +1,21 @@
+{
+  "name": "dummy",
+  "version": "0.0.10",
+  "homepage": "https://github.com/cj/roda-component",
+  "authors": [
+    "cj <cjlazell@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "public/chat/bower",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "font-awesome": "~4.2.0",
+    "jScrollPane": "~2.0.20"
+  }
+}

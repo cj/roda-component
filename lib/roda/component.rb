@@ -36,10 +36,13 @@ class Roda
       @scope = scope
 
       if client?
-        puts self.class._name
         $faye.subscribe "/components/#{self.class._name}" do |msg|
-          puts 'meh'
-          `window.console.log(#{msg})`
+          puts 'moo'
+          `console.log(#{msg});`
+          # case msg['type']
+          # when 'join'
+          #   trigger :join, msg unless public_id == msg['public_id']
+          # end
         end
       end
     end

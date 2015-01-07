@@ -31,6 +31,7 @@ class Roda
         opts[:class_name]      ||= {}
         opts[:events]          ||= {}
         opts[:user_model]      ||= 'User'
+        opts[:redis_uri]       ||= 'redis://localhost:6379'
         opts[:redis_namespace] ||= 'roda:component:'
         opts[:cache][:tmpl]    ||= {}
 
@@ -47,7 +48,7 @@ class Roda
           }
         })
 
-        Roda::Component::Ohm.redis = Redic.new opts[:redis_uri] || 'redis://localhost:6379'
+        # Roda::Component::Ohm.redis = Redic.new opts[:redis_uri] || 'redis://localhost:6379'
 
         # Set the current app
         opts[:class].set_app app
@@ -177,7 +178,7 @@ class Roda
               # Append the gems path
               s.append_path Dir.pwd
               s.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
-              s.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
+              # s.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
               # Append the path to the components folder
               s.append_path scope.component_opts[:path]
 

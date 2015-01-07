@@ -34,11 +34,11 @@ if RUBY_ENGINE == 'opal'
         end
 
         def incoming message, block
-          msg = Native(message)
+          # puts '====INCOMING===='
+          # `console.log(#{message})`
+          # puts '================'
 
-          `console.log(#{msg})`
-
-          if (!@public_id && !@private_id) && msg[:channel] == '/meta/handshake'
+          if (!@public_id && !@private_id) && message[:channel] == '/meta/handshake'
             subscribe "/components/incoming/#{private_id}/#{public_id}" do |data|
               data     = Native(data)
               event_id = data[:event_id]
@@ -57,7 +57,14 @@ if RUBY_ENGINE == 'opal'
             message = #{message}
             message.ext = message.ext || {};
             message.ext.csrfToken = $('meta[name=_csrf]').attr('content');
+            message.ext.public_id = #{public_id};
+            message.ext.private_id = #{private_id};
           }
+
+          # puts '====OUTGOING===='
+          # `console.log(#{message})`
+          # puts '================'
+
           block.call message
         end
 
@@ -72,9 +79,10 @@ if RUBY_ENGINE == 'opal'
   end
 else
   require 'faye'
-  require 'roda/component/ohm'
-  require 'roda/component/models/user'
-  require 'roda/component/models/channel'
+  require 'redic'
+  # require 'roda/component/ohm'
+  # require 'roda/component/models/user'
+  # require 'roda/component/models/channel'
 
   class Roda
     class Component
@@ -93,23 +101,43 @@ else
         end
 
         class ChannelManager
+          def redis
+            @redis ||= Redic.new(Roda::Component.app.component_opts[:redis_uri])
+          end
+
+          def client
+            @client ||= ::Faye::Client.new('http://127.0.0.1/faye')
+          end
+
           def incoming(message, request, callback)
             app = get_app(request)
 
-            ap '====INCOMING===='
-            ap message
-            ap '================'
+            # ap '====INCOMING===='
+            # ap message
+            # ap '================'
 
-            if data = message['data']
-              case data['type']
-              when 'event'
-                options = { local: data['local'] }
-                data['event_type'] == 'call' \
-                  ? options[:call]    = data['event_method'] \
-                  : options[:trigger] = data['event_method']
+            case message['channel']
+            when '/meta/connect'
+              redis.call 'SET', "#{app.component_opts[:redis_namespace]}users:#{message['ext']['public_id']}", message['ext']['private_id']
+            when '/meta/disconnect'
+              redis.call 'DEL', "#{app.component_opts[:redis_namespace]}users:#{message['ext']['public_id']}"
+            when '/meta/subscribe'
+              if message['subscription'][%r{\A/components/}]
+                component_name = message['subscription'].split('/').last
+                client.publish "/components/#{component_name}", type: 'join', public_id: message['ext']['public_id']
+              end
+            else
+              if data = message['data']
+                case data['type']
+                when 'event'
+                  options = { local: data['local'] }
+                  data['event_type'] == 'call' \
+                    ? options[:call]    = data['event_method'] \
+                    : options[:trigger] = data['event_method']
 
-                message['data']['local'] = app.roda_component(:"#{data['name']}", options)
-                message['channel']       = message['channel'].gsub(/outgoing/, 'incoming')
+                  message['data']['local'] = app.roda_component(:"#{data['name']}", options)
+                  message['channel']       = message['channel'].gsub(/outgoing/, 'incoming')
+                end
               end
             end
 
