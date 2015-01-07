@@ -1,0 +1,15 @@
+Writing PID to tmp/pids/thin.8082.pid
+Using rack adapter
+sh: 1: Syntax error: word unexpected (expecting ")")
+I, [2015-01-07T12:06:27.348377 #30682]  INFO -- : Loading /home/cj/gems/roda-component/test/dummy/app.rb
+I, [2015-01-07T12:06:27.516443 #30682]  INFO -- : Loading /home/cj/gems/roda-component/test/dummy/components/chat.rb
+I, [2015-01-07T12:06:27.639953 #30682]  INFO -- : Loading /home/cj/gems/roda-component/test/dummy/components/form.rb
+I, [2015-01-07T12:06:27.849572 #30682]  INFO -- : Loading /home/cj/gems/roda-component/test/dummy/components/layout.rb
+I, [2015-01-07T12:06:27.962949 #30682]  INFO -- : Loading /home/cj/gems/roda-component/test/dummy/components/theme.rb
+I, [2015-01-07T12:06:28.093098 #30682]  INFO -- : Loading /home/cj/gems/roda-component/lib/roda/component/dom.rb
+I, [2015-01-07T12:06:28.198991 #30682]  INFO -- : Loading /home/cj/gems/roda-component/lib/roda/component/faye.rb
+I, [2015-01-07T12:06:28.330879 #30682]  INFO -- : Loading /home/cj/gems/roda-component/lib/roda/component.rb
+I, [2015-01-07T12:06:28.429854 #30682]  INFO -- : Loading /home/cj/gems/roda-component/lib/roda/plugins/component.rb
+Thin web server (v1.6.3 codename Protein Powder)
+Maximum connections set to 1024
+Listening on 0.0.0.0:8082, CTRL+C to stop
