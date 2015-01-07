@@ -20,7 +20,7 @@ install:
 	bundle
 
 server:
-	(cd test/dummy && bundle exec thin start -p 8080)
+	cd test/dummy && bundle exec thin start -p 8080
 
 test:
 	bundle exec pry-test --async

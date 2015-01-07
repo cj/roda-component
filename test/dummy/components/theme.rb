@@ -24,10 +24,10 @@ class BoxComponent < Roda::Component
     end if server?
   end
 
-  on :chat_row_added, socket: true do |msg|
-    puts 'moo'
-    # add_chat_row msg
-  end
+  # on :chat_row_added, socket: true do |msg|
+  #   puts 'moo'
+  #   # add_chat_row msg
+  # end
 
   on :server do
     def test

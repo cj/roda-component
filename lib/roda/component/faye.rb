@@ -16,6 +16,8 @@ if RUBY_ENGINE == 'opal'
         alias_native :set_header, :setHeader
         alias_native :add_extension, :addExtension
 
+        attr_accessor :disconnect
+
         def initialize url
           super `new Faye.Client(#{url})`
           set_header 'X-CSRF-TOKEN', Element.find('meta[name=_csrf]').attr('content')
@@ -89,11 +91,22 @@ else
       class Faye
         class CsrfProtection
           def incoming(message, request, callback)
-            session_token = request.session['csrf.token']
-            message_token = message['ext'] && message['ext'].delete('csrfToken')
+            case message['channel']
+            when '/meta/connect', '/meta/handshake', '/meta/subscribe', '/meta/disconnect', '/meta/unsubscribe'
+              session_token = request.session['csrf.token']
+              message_token = message['ext'] && message['ext'].delete('csrfToken')
 
-            unless session_token == message_token
-              message['error'] = '401::Access denied'
+              unless session_token == message_token
+                message['error'] = '401::Access denied'
+              end
+            else
+              app_token     = Roda::Component.app.component_opts[:token]
+              message_token = message['data'] && message['data'].delete('token')
+
+
+              unless app_token == message_token
+                message['error'] = '401::Access denied'
+              end
             end
 
             callback.call(message)
@@ -105,26 +118,38 @@ else
             @redis ||= Redic.new(Roda::Component.app.component_opts[:redis_uri])
           end
 
-          def client
-            @client ||= ::Faye::Client.new('http://127.0.0.1/faye')
-          end
-
           def incoming(message, request, callback)
             app = get_app(request)
 
-            # ap '====INCOMING===='
-            # ap message
-            # ap '================'
+            public_id  = message['ext'] && message['ext']['public_id']
+            private_id = message['ext'] && message['ext'].delete('private_id')
+
+            # app.session['roda_component'] ||= {
+            #   'public_ids' => {}
+            # }
 
             case message['channel']
             when '/meta/connect'
-              redis.call 'SET', "#{app.component_opts[:redis_namespace]}users:#{message['ext']['public_id']}", message['ext']['private_id']
+              if public_id.length > 0
+                redis.call 'SET', "#{app.component_opts[:redis_namespace]}users:#{public_id}", private_id
+              end
+              callback.call message
             when '/meta/disconnect'
-              redis.call 'DEL', "#{app.component_opts[:redis_namespace]}users:#{message['ext']['public_id']}"
+              redis.call 'DEL', "#{app.component_opts[:redis_namespace]}users:#{public_id}"
+              callback.call message
+            when '/meta/unsubscribe'
+              puts 'unsubscribe'
             when '/meta/subscribe'
               if message['subscription'][%r{\A/components/}]
                 component_name = message['subscription'].split('/').last
-                client.publish "/components/#{component_name}", type: 'join', public_id: message['ext']['public_id']
+
+                callback.call message
+
+                app.roda_component(:"#{component_name}", { trigger: :join, public_id: public_id, private_id: private_id })
+
+                client = ::Faye::Client.new("#{request.env['HTTP_ORIGIN']}/faye")
+                client.set_header 'X-CSRF-TOKEN', message['ext']['csrfToken']
+                client.publish "/components/#{component_name}", type: 'join', public_id: message['ext']['public_id'], token: app.component_opts[:token]
               end
             else
               if data = message['data']
@@ -139,9 +164,9 @@ else
                   message['channel']       = message['channel'].gsub(/outgoing/, 'incoming')
                 end
               end
-            end
 
-            callback.call message
+              callback.call message
+            end
           end
 
           # /components/:id/:comp/:action

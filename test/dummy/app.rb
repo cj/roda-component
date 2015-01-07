@@ -17,8 +17,8 @@ class TestApp < Roda
     key:    "test:roda:components",
     secret: "na"
 
-  plugin :csrf, header: 'X-CSRF-TOKEN'
-  plugin :component, { path: path }
+  plugin :csrf, header: 'X-CSRF-TOKEN', skip: ['POST:/faye']
+  plugin :component, { path: path, token: '687^*&SAD876asd87as6d*&8asd' }
   plugin :assets, {
     path: "#{path}/../public/chat",
     css_dir: '',
@@ -51,6 +51,25 @@ class TestApp < Roda
     end
 
     r.root { component(:chat) }
+
+    r.on 'session/:key/:value' do |key, value|
+      session[key] = value
+      response.write '<h3>Added:</h3>'
+      response.write "<div><b>#{key}</b>: #{value}</div>"
+    end
+
+    r.on 'session/:key' do |key|
+      session.delete key
+      response.write '<h3>Deleted:</h3>'
+      response.write "<div><b>#{key}</b></div>"
+    end
+
+    r.on 'session' do
+      session.each do |key, value|
+        response.write "<div><b>#{key}</b>: #{value}</div>"
+      end
+    end
+
   end
 end
 

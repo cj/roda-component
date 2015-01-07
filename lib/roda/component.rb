@@ -37,12 +37,22 @@ class Roda
 
       if client?
         $faye.subscribe "/components/#{self.class._name}" do |msg|
-          puts 'moo'
-          `console.log(#{msg});`
-          # case msg['type']
-          # when 'join'
-          #   trigger :join, msg unless public_id == msg['public_id']
-          # end
+          msg = Native(msg)
+
+          trigger :"#{msg[:type]}", msg unless $faye.public_id == msg[:public_id]
+        end
+
+        $faye.on 'transport:up' do
+          if $faye.disconnect
+            trigger :reconnect
+          else
+            trigger :connect
+          end
+        end
+
+        $faye.on 'transport:down' do
+          $faye.disconnect = true
+          trigger :disconnect
         end
       end
     end
@@ -239,6 +249,10 @@ class Roda
     end
 
     def trigger *args
+      if server?
+        session['trigger'] ||= []
+        session['trigger'] << args
+      end
       events.trigger(*args)
     end
 

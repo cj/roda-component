@@ -97,6 +97,7 @@ class Roda
 
         def component name, options = {}, &block
           comp = load_component name
+          # comp.session = session
 
           action  = options[:call]    || :display
           trigger = options[:trigger] || false

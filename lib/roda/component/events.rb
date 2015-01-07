@@ -8,7 +8,6 @@ class Roda
           event        = (class_events[:_jquery_events] ||= [])
           event        << [block, class_name, options, name]
         elsif options.is_a? Hash
-          puts options
           limit_if = options.delete(:if) || []
           limit_if = [limit_if] unless limit_if.is_a? Array
 
@@ -28,7 +27,7 @@ class Roda
       def trigger_jquery_events
         return unless e = events[klass._name]
 
-        e[:_jquery_events].each do |event|
+        (e[:_jquery_events] || []).each do |event|
           block, comp, selector, name = event
 
           name = name.to_s
@@ -45,11 +44,14 @@ class Roda
 
       def trigger name, options = {}
         content = ''
+        e = events[klass._name]
 
-        events[klass._name][name.to_s].each do |event|
-          block, comp, options = event
+        return unless e
 
-          if !options[:socket]
+        (e[name.to_s] || []).each do |event|
+          block, comp, opts = event
+
+          if !opts[:socket]
             response = Component::Instance.new(component(comp), scope).instance_exec options, &block
 
             if response.is_a? Roda::Component::DOM
@@ -63,7 +65,7 @@ class Roda
               type: 'event',
               event_type: 'call',
               event_method: name.to_s,
-              local: options
+              data: options
             })
           end
         end
