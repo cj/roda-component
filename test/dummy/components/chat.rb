@@ -8,7 +8,7 @@ class ChatComponent < Roda::Component
     end if server?
   end
 
-  on :join do
+  on :join do |msg|
     puts 'joined'
   end
 end

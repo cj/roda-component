@@ -2,7 +2,13 @@ class Roda
   class Component
     class Events < Struct.new(:klass, :component_opts, :scope)
       def on name, options = {}, &block
-        if !options.is_a? String
+        if client? && options.is_a?(String)
+          class_name   = klass._name
+          class_events = (events[class_name] ||= {})
+          event        = (class_events[:_jquery_events] ||= [])
+          event        << [block, class_name, options, name]
+        elsif options.is_a? Hash
+          puts options
           limit_if = options.delete(:if) || []
           limit_if = [limit_if] unless limit_if.is_a? Array
 
@@ -14,12 +20,8 @@ class Roda
           if limit_if.any? && !limit_if.include?(engine_type.to_sym)
             block = Proc.new {}
           end
+
           event << [block, klass._name, options]
-        elsif client?
-          class_name   = klass._name
-          class_events = (events[class_name] ||= {})
-          event        = (class_events[:_jquery_events] ||= [])
-          event        << [block, class_name, options, name]
         end
       end
 
@@ -88,12 +90,12 @@ class Roda
       end
 
       def server?
-        RUBY_ENGINE == 'ruby' ? 'server' : false
+        RUBY_ENGINE == 'ruby' ? true : false
       end
       alias :server :server?
 
       def client?
-        RUBY_ENGINE == 'opal' ? 'client' : false
+        !server?
       end
       alias :client :client?
     end
