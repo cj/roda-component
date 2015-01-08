@@ -27,11 +27,11 @@ class ChatComponent < Roda::Component
       puts 'joined'
     else
       puts '========FROM CHAT=========\\'
-      session['public_ids'] ||= []
-      unless session['public_ids'].include? data[:public_id]
-        session['public_ids'] << data[:public_id]
-      end
-      ap session
+      # session['public_ids'] ||= []
+      # unless session['public_ids'].include? data[:public_id]
+      #   session['public_ids'] << data[:public_id]
+      # end
+      # ap session
       puts '//========FROM CHAT========='
       puts 'joined server'
     end

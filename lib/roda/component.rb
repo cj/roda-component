@@ -30,7 +30,7 @@ end
 
 class Roda
   class Component
-    attr_accessor :scope, :cache
+    attr_accessor :scope, :cache, :session
 
     def initialize(scope = false)
       @scope = scope
