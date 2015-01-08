@@ -30,10 +30,10 @@ end
 
 class Roda
   class Component
-    attr_accessor :scope, :cache, :session
+    attr_accessor :scope, :cache
 
     def initialize(scope = false)
-      @scope = scope
+      @scope   = scope
 
       if client?
         $faye.subscribe "/components/#{self.class._name}" do |msg|
@@ -55,6 +55,10 @@ class Roda
           trigger :disconnect
         end
       end
+    end
+
+    def session
+      request.session
     end
 
     class << self
@@ -249,10 +253,6 @@ class Roda
     end
 
     def trigger *args
-      if server?
-        session['trigger'] ||= []
-        session['trigger'] << args
-      end
       events.trigger(*args)
     end
 

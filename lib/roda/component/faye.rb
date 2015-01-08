@@ -121,35 +121,40 @@ else
           def incoming(message, request, callback)
             app = get_app(request)
 
+            session_id = request.session['session_id']
             public_id  = message['ext'] && message['ext']['public_id']
             private_id = message['ext'] && message['ext'].delete('private_id')
-
-            # app.session['roda_component'] ||= {
-            #   'public_ids' => {}
-            # }
+            key        = "#{app.component_opts[:redis_namespace]}users:#{session_id}"
 
             case message['channel']
             when '/meta/connect'
-              if public_id.length > 0
-                redis.call 'SET', "#{app.component_opts[:redis_namespace]}users:#{public_id}", private_id
+              if session_id
+                redis.call 'HSET', "#{key}/ids", private_id, public_id
+                # puts redis.call 'HGETALL', "#{key}/ids"
               end
               callback.call message
             when '/meta/disconnect'
-              redis.call 'DEL', "#{app.component_opts[:redis_namespace]}users:#{public_id}"
               callback.call message
-            when '/meta/unsubscribe'
-              puts 'unsubscribe'
-            when '/meta/subscribe'
+
+              redis.call 'DEL', "#{key}/ids"
+              channels = redis.call 'GET', "#{key}/channels/#{public_id}"
+              channels = channels ? JSON.parse(channels) : []
+
+              ap 'disconnect'
+              ap channels
+              channels.each do |channel|
+                send_sub_to({
+                  'channel'      => '/meta/unsubscribe',
+                  'subscription' => channel,
+                  'ext'          => message['ext']
+                }, public_id, private_id, app, key, request)
+              end
+
+              redis.call 'DEL', "#{key}/channels/#{public_id}"
+            when '/meta/subscribe', '/meta/unsubscribe'
               if message['subscription'][%r{\A/components/}]
-                component_name = message['subscription'].split('/').last
-
                 callback.call message
-
-                app.roda_component(:"#{component_name}", { trigger: :join, public_id: public_id, private_id: private_id })
-
-                client = ::Faye::Client.new("#{request.env['HTTP_ORIGIN']}/faye")
-                client.set_header 'X-CSRF-TOKEN', message['ext']['csrfToken']
-                client.publish "/components/#{component_name}", type: 'join', public_id: message['ext']['public_id'], token: app.component_opts[:token]
+                send_sub_to message, public_id, private_id, app, key, request
               end
             else
               if data = message['data']
@@ -167,6 +172,33 @@ else
 
               callback.call message
             end
+          end
+
+          def send_sub_to message, public_id, private_id, app, key, request
+            key = "#{key}/channels/#{public_id}"
+
+            joining = message['channel'] == '/meta/subscribe' ? true : false
+
+            component_name = message['subscription'].split('/').last
+
+            channels = redis.call 'GET', key
+            channels = channels ? JSON.parse(channels) : []
+
+            if joining
+              channels << message['subscription']
+            else
+              channels.delete message['subscription']
+            end
+
+            if channels.length
+              redis.call 'SET', key, channels.to_json
+            end
+
+            data = app.roda_component(:"#{component_name}", { trigger: (joining ? :join : :leave), public_id: public_id, private_id: private_id })
+
+            client = ::Faye::Client.new("#{request.env['HTTP_ORIGIN']}/faye")
+            client.set_header 'X-CSRF-TOKEN', message['ext']['csrfToken']
+            client.publish "/components/#{component_name}", type: (joining ? 'join' : 'leave'), public_id: public_id, token: app.component_opts[:token], data: data
           end
 
           # /components/:id/:comp/:action

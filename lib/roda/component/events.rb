@@ -1,6 +1,6 @@
 class Roda
   class Component
-    class Events < Struct.new(:klass, :component_opts, :scope)
+    class Events < Struct.new(:klass, :component_opts, :scope, :request)
       def on name, options = {}, &block
         if client? && options.is_a?(String)
           class_name   = klass._name
