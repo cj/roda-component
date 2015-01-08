@@ -8,5 +8,10 @@ gem "oga", ">= 0.2.0", require: false
 gem "nokogiri", "~> 1.6.5", require: false
 gem 'awesome_print'
 gem 'tilt'
+gem 'sqlite3'
 gem 'rack_csrf'
 gem 'sass'
+gem 'shield'
+gem 'sequel'
+gem 'binding_of_caller'
+gem 'better_errors'

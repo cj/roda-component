@@ -8,11 +8,24 @@ require 'sass'
 require 'tilt'
 require 'roda'
 require 'nokogiri'
+require 'shield'
+require 'sequel'
 require 'roda/component'
+require 'binding_of_caller'
+require 'better_errors'
+
+BetterErrors.application_root = __dir__
+BetterErrors::Middleware.allow_ip! "0.0.0.0/0"
 
 class TestApp < Roda
+  include Shield::Helpers
+
   path = DUMMY_PATH
 
+  DB = Sequel.connect('sqlite://dummy.db')
+
+  use BetterErrors::Middleware
+  use Shield::Middleware, "/login"
   use Rack::Session::Cookie,
     key:    "test:roda:components",
     secret: "na"
@@ -36,6 +49,10 @@ class TestApp < Roda
     ]
   }
 
+  def current_user
+    authenticated(Models::User)
+  end
+
   route do |r|
     r.components
     r.assets
@@ -51,6 +68,8 @@ class TestApp < Roda
     end
 
     r.root { component(:chat) }
+
+    r.on('login') { component(:login) }
 
     r.on 'session/:key/:value' do |key, value|
       session[key] = value
@@ -69,9 +88,7 @@ class TestApp < Roda
         response.write "<div><b>#{key}</b>: #{value}</div>"
       end
     end
-
   end
 end
 
 Dir["#{DUMMY_PATH}/**/*.rb"].sort.each { |file| require file }
-

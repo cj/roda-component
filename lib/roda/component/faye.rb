@@ -140,8 +140,6 @@ else
               channels = redis.call 'GET', "#{key}/channels/#{public_id}"
               channels = channels ? JSON.parse(channels) : []
 
-              ap 'disconnect'
-              ap channels
               channels.each do |channel|
                 send_sub_to({
                   'channel'      => '/meta/unsubscribe',

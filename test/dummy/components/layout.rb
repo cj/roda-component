@@ -16,10 +16,14 @@ class LayoutComp < Roda::Component
 
   def display data, &block
     if server?
+      body_class = data.delete :body_class
+
       # we need this so that roda-components can authenticate your sessions
       dom.at_css('head').add_child csrf_metatag
 
       dom.find('body').html(yield)
+
+      dom.at('body')['class'] = body_class if body_class
 
       dom
     end

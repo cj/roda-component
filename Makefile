@@ -20,7 +20,8 @@ install:
 	bundle
 
 server:
-	cd test/dummy && bundle exec thin start -p 8080
+	bundle
+	cd test/dummy && touch dummy.db && rm dummy.db && bundle exec thin start -p 8080
 
 test:
 	bundle exec pry-test --async

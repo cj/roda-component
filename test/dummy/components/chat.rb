@@ -3,10 +3,12 @@ class ChatComponent < Roda::Component
   html "../public/chat/index.html"
 
   def display
-    if server?
-      component(:layout) do
-        dom.find('body').html
-      end
+    return unless server?
+
+    request.redirect 'login' unless current_user
+
+    component(:layout) do
+      dom.find('body').html
     end
   end
 
