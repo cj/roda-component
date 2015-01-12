@@ -12,6 +12,7 @@ tmp/
 *.o
 *.a
 mkmf.log
+/test/dummy/log/
 .env*
 .gs
 *.gem
