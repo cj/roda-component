@@ -13,20 +13,23 @@
 
 <body>
 
-  <div class="main-form">
-  <i class="logo"></i>
-  <input type="text" placeholder="Username" value="">
-  <input type="password" placeholder="Password" value="">
-  <label>
-    <input type="checkbox"> Remember me
-  </label>
-  <input type="submit" value="Sign in">
-  <a href="#" title="">Forgot your password?</a>
-  <div>
-    <a href="#" title="">Don't have an account?</a>
-    <a href="#" title="">Sign Up</a>
-  </div>
-</div>
+  <form class="main-form">
+    <i class="logo"></i>
+    <div class='field-container'>
+      <span class='field-error'>Email not valid.</span>
+      <input name='email' type="text" placeholder="Email" value="">
+      <input name='password' type="password" placeholder="Password" value="">
+    </div>
+    <label class='remember-me'>
+      <input type="checkbox"> Remember me
+    </label>
+    <input class='submit' type="submit" value="Sign in">
+    <a class='forgot-password' href="#" title="">Forgot your password?</a>
+    <div class='signup'>
+      <a href="#" title="">Don't have an account?</a>
+      <a href="#" title="">Sign Up</a>
+    </div>
+  </form>
 
 </body>
 

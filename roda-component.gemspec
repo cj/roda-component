@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "opal", "~> 0.7.0.beta3"
   spec.add_runtime_dependency "opal-jquery", "~> 0.3.0.beta1"
+  spec.add_runtime_dependency "redis-rack"
   spec.add_runtime_dependency "faye"
   spec.add_runtime_dependency "faye-redis"
   spec.add_runtime_dependency "redic", "~> 1.1.1"

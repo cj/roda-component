@@ -16,7 +16,7 @@ if RUBY_ENGINE == 'opal'
         alias_native :set_header, :setHeader
         alias_native :add_extension, :addExtension
 
-        attr_accessor :disconnect
+        attr_accessor :disconnected, :online
 
         def initialize url
           super `new Faye.Client(#{url})`
@@ -82,9 +82,6 @@ if RUBY_ENGINE == 'opal'
 else
   require 'faye'
   require 'redic'
-  # require 'roda/component/ohm'
-  # require 'roda/component/models/user'
-  # require 'roda/component/models/channel'
 
   class Roda
     class Component
@@ -118,10 +115,13 @@ else
             @redis ||= Redic.new(Roda::Component.app.component_opts[:redis_uri])
           end
 
-          def incoming(message, request, callback)
-            app = get_app(request)
+          def incoming(message, r, callback)
+            r.env['RODA_COMPONENT_FROM_FAYE'] = true
+            r.env['HTTP_X_RODA_COMPONENT_ON_SERVER'] = true
 
-            session_id = request.session['session_id']
+            app = get_app(r)
+
+            session_id = r.session['session_id']
             public_id  = message['ext'] && message['ext']['public_id']
             private_id = message['ext'] && message['ext'].delete('private_id')
             key        = "#{app.component_opts[:redis_namespace]}users:#{session_id}"
@@ -145,26 +145,34 @@ else
                   'channel'      => '/meta/unsubscribe',
                   'subscription' => channel,
                   'ext'          => message['ext']
-                }, public_id, private_id, app, key, request)
+                }, public_id, private_id, app, key, r)
               end
 
               redis.call 'DEL', "#{key}/channels/#{public_id}"
             when '/meta/subscribe', '/meta/unsubscribe'
               if message['subscription'][%r{\A/components/}]
                 callback.call message
-                send_sub_to message, public_id, private_id, app, key, request
+                send_sub_to message, public_id, private_id, app, key, r
               end
             else
               if data = message['data']
                 case data['type']
                 when 'event'
-                  options = { local: data['local'] }
+                  options ||= {}
+                  options.merge! data['local']
+
                   data['event_type'] == 'call' \
                     ? options[:call]    = data['event_method'] \
                     : options[:trigger] = data['event_method']
 
-                  message['data']['local'] = app.roda_component(:"#{data['name']}", options)
-                  message['channel']       = message['channel'].gsub(/outgoing/, 'incoming')
+                  begin
+                    message['data']['local'] = app.roda_component(:"#{data['name']}", options)
+                    message['channel']       = message['channel'].gsub(/outgoing/, 'incoming')
+                  rescue Exception => e
+                    #fix: faye extentions are capturing errors for some reason
+                    ap e.message
+                    ap e.message.inspect
+                  end
                 end
               end
 
@@ -196,7 +204,7 @@ else
 
             client = ::Faye::Client.new("#{request.env['HTTP_ORIGIN']}/faye")
             client.set_header 'X-CSRF-TOKEN', message['ext']['csrfToken']
-            client.publish "/components/#{component_name}", type: (joining ? 'join' : 'leave'), public_id: public_id, token: app.component_opts[:token], data: data
+            client.publish "/components/#{component_name}", type: (joining ? 'join' : 'leave'), public_id: public_id, token: app.component_opts[:token], local: data
           end
 
           # /components/:id/:comp/:action

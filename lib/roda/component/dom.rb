@@ -9,7 +9,7 @@ class Roda
         if server?
           @dom = Component::HTML(html.dup)
         else
-          @dom = Element[html.dup]
+          @dom = html.is_a?(String) ? Element[html.dup] : html
         end
       end
 
@@ -22,41 +22,41 @@ class Roda
 
         if block
           if server?
-            @node.each do |node|
-              block.call node
+            node.each do |n|
+              block.call n
             end
           else
-            block.call @node
+            block.call node
           end
         else
           if server?
-            @node = @node.first
+            @node = node.first
           end
         end
 
         if server?
           self
         else
-          @node
+          node
         end
       end
 
       def html= content
         if server?
-          @node.inner_html = content
+          node.inner_html = content
         else
-          @node.html content
+          node.html content
         end
 
-        @node
+        node
       end
 
       def html content = false
         if !content
           if server?
-            @node.inner_html
+            node.inner_html
           else
-            @node ? @node.html : dom.html
+            node ? node.html : dom.html
           end
         else
           self.html = content
@@ -64,7 +64,7 @@ class Roda
       end
 
       def node
-        @node || ''
+        @node || dom
       end
 
       # This allows you to use all the nokogiri or opal jquery methods if a

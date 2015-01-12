@@ -18,6 +18,7 @@ require 'roda/component/events'
 if RUBY_ENGINE == 'opal'
   class Element
     alias_native :val
+    alias_native :serialize_array, :serializeArray
   end
 
   $component_opts ||= {
@@ -43,7 +44,9 @@ class Roda
         end
 
         $faye.on 'transport:up' do
-          if $faye.disconnect
+          $faye.online = true
+
+          if $faye.disconnected
             trigger :reconnect
           else
             trigger :connect
@@ -51,14 +54,11 @@ class Roda
         end
 
         $faye.on 'transport:down' do
-          $faye.disconnect = true
+          $faye.disconnected = true
+          $faye.online       = false
           trigger :disconnect
         end
       end
-    end
-
-    def session
-      request.session
     end
 
     class << self
@@ -81,20 +81,37 @@ class Roda
           m.public_instance_methods(false).each do |meth|
             define_method "#{meth}" do |*args, &blk|
               name     = self.class._name
-              event_id = "comp-event-#{$faye.generate_id}"
+              # event_id = "comp-event-#{$faye.generate_id}"
 
-              Element['body'].on event_id do |event, local, data|
-                blk.call local, event, data
+              HTTP.post("/components/#{name}/call/#{meth}",
+                headers: {
+                  'X-CSRF-TOKEN' => Element.find('meta[name=_csrf]').attr('content'),
+                  'X-RODA-COMPONENT-ON-SERVER' => true
+                },
+                payload: args.first) do |response|
+
+                  # We set the new csrf token
+                  xhr  = Native(response.xhr)
+                  csrf = xhr.getResponseHeader('NEW-CSRF')
+                  Element.find('meta[name=_csrf]').attr 'content', csrf
+                  ###########################
+
+                  blk.call Native(response.body), response
               end
 
-              $faye.publish("/components/outgoing/#{$faye.private_id}/#{$faye.public_id}", {
-                name: name,
-                type: 'event',
-                event_type: 'call',
-                event_method: meth,
-                event_id: event_id,
-                local: args.first || nil
-              })
+              # Element['body'].on event_id do |event, local, data|
+              #   blk.call local, event, data
+              # end
+              #
+              # $faye.publish("/components/outgoing/#{$faye.private_id}/#{$faye.public_id}", {
+              #   name: name,
+              #   type: 'event',
+              #   event_type: 'call',
+              #   event_method: meth,
+              #   event_id: event_id,
+              #   local: args.first || nil
+              # })
+
 
               true
             end
@@ -106,7 +123,7 @@ class Roda
 
       # The name of the component
       alias_method :name_original, :name
-      def name(_name = nil)
+      def comp_name(_name = nil)
         return name_original unless _name
 
         @_name = _name.to_s
@@ -117,7 +134,7 @@ class Roda
       end
 
       # The html source
-      def html _html, &block
+      def comp_html _html, &block
         if server?
           if _html.is_a? String
             if _html[%r{\A./}]
@@ -144,10 +161,9 @@ class Roda
       end
 
       # setup your dom
-      def setup &block
+      def comp_setup &block
         block.call cache[:dom] if server?
       end
-      alias :clean :setup
 
       def events
         @_events ||= Events.new self, component_opts, false
@@ -272,7 +288,7 @@ class Roda
     alias_method :server, :server?
 
     def client?
-      RUBY_ENGINE == 'opal'
+      !server?
     end
     alias_method :client, :client?
   end

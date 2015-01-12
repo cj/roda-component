@@ -7,7 +7,7 @@ class Roda
           class_events = (events[class_name] ||= {})
           event        = (class_events[:_jquery_events] ||= [])
           event        << [block, class_name, options, name]
-        elsif options.is_a? Hash
+        elsif options.is_a?(Hash)
           limit_if = options.delete(:if) || []
           limit_if = [limit_if] unless limit_if.is_a? Array
 
@@ -56,7 +56,7 @@ class Roda
 
             if response.is_a? Roda::Component::DOM
               content = response.to_xml
-            elsif response.is_a? String
+            else
               content = response
             end
           else

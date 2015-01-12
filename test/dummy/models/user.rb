@@ -2,6 +2,10 @@ module Models
   class User < Sequel::Model
     include Shield::Model
 
+    def full_name
+      "#{first_name} #{last_name}"
+    end
+
     class << self
       def fetch email
         # TODO: Case insensitive emails? Force lowercase?

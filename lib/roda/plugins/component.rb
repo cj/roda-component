@@ -3,7 +3,6 @@ require 'faye'
 require 'faye/redis'
 require 'roda/component'
 require 'roda/component/faye'
-require 'roda/component/ohm'
 require 'json'
 require "base64"
 
@@ -98,8 +97,8 @@ class Roda
         def component name, options = {}, &block
           comp = load_component name
 
-          action  = options[:call]    || :display
-          trigger = options[:trigger] || false
+          action  = options.delete(:call)    || :display
+          trigger = options.delete(:trigger) || false
 
           # call action
           # TODO: make sure the single method parameter isn't a block
@@ -123,10 +122,13 @@ class Roda
             if comp_response.is_a? Roda::Component::DOM
               content = comp_response.to_xml
             else
-              content = comp_response.to_s
+              content = comp_response
             end
 
-            content += load_component_js comp, action
+            unless request.env.include? 'HTTP_X_RODA_COMPONENT_ON_SERVER'
+              content = content.to_s
+              content += load_component_js comp, action
+            end
 
             content
           else
@@ -200,12 +202,31 @@ class Roda
           end
 
           on self.class.component_route_regex do |comp, type, action|
+            if scope.request.env.include? 'HTTP_X_RODA_COMPONENT_ON_SERVER'
+              data = JSON.parse scope.request.body.read
+            else
+              data = {}
+            end
+
             case type
             when 'call'
-              scope.roda_component(comp, call: action)
+              data[:call] = action
             when 'trigger'
-              scope.roda_component(comp, trigger: action)
+              data[:trigger] = action
             end
+
+            res = scope.roda_component(comp, data)
+
+            scope.response.headers["NEW-CSRF"] = scope.csrf_token
+
+            if res.is_a? Hash
+              scope.response.headers["Content-Type"] = 'application/json; charset=UTF-8'
+              res = res.to_json
+            else
+              res = res.to_s
+            end
+
+            res
           end
         end
       end

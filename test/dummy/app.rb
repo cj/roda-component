@@ -14,8 +14,8 @@ require 'roda/component'
 require 'binding_of_caller'
 require 'better_errors'
 
-BetterErrors.application_root = __dir__
-BetterErrors::Middleware.allow_ip! "0.0.0.0/0"
+# BetterErrors.application_root = __dir__
+# BetterErrors::Middleware.allow_ip! "0.0.0.0/0"
 
 class TestApp < Roda
   include Shield::Helpers
@@ -24,7 +24,17 @@ class TestApp < Roda
 
   DB = Sequel.connect('sqlite://dummy.db')
 
-  use BetterErrors::Middleware
+  unless DB.table_exists?(:users)
+    DB.create_table :users do
+      primary_key :id
+      String :first_name
+      String :last_name
+      String :email
+      String :crypted_password
+    end
+  end
+
+  # use BetterErrors::Middleware
   use Shield::Middleware, "/login"
   use Rack::Session::Cookie,
     key:    "test:roda:components",
@@ -35,6 +45,7 @@ class TestApp < Roda
   plugin :assets, {
     path: "#{path}/../public/chat",
     css_dir: '',
+    js_dir: '',
     css: [
       'bower/open-sans-fontface/open-sans.css',
       'bower/font-awesome/css/font-awesome.css',
@@ -70,6 +81,7 @@ class TestApp < Roda
     r.root { component(:chat) }
 
     r.on('login') { component(:login) }
+    r.on('logout') { component(:login, call: :logout) }
 
     r.on 'session/:key/:value' do |key, value|
       session[key] = value
@@ -85,6 +97,11 @@ class TestApp < Roda
 
     r.on 'session' do
       session.each do |key, value|
+        response.write "<div><b>#{key}</b>: #{value}</div>"
+      end
+      response.write '<br><br><br><br>'
+
+      request.env.each do |key, value|
         response.write "<div><b>#{key}</b>: #{value}</div>"
       end
     end

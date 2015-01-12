@@ -1,11 +1,13 @@
 class ChatComponent < Roda::Component
-  name :chat
-  html "../public/chat/index.html"
+  comp_name :chat
+  comp_html "../public/chat/index.html"
 
   def display
     return unless server?
 
     request.redirect 'login' unless current_user
+
+    dom.find('.my-account .name span').html current_user.full_name
 
     component(:layout) do
       dom.find('body').html
@@ -25,16 +27,24 @@ class ChatComponent < Roda::Component
   end
 
   on :join do |data|
-    if client?
-      puts 'joined'
-    else
-      ap session
-      puts 'joined server'
-    end
+    return user_details unless client?
+
+    `console.log(#{data});`
+    puts 'joined'
   end
 
   on :leave do |data|
-    puts 'left'
-    false
+    return user_details unless client?
+
+    `console.log(#{data});`
+    puts 'leave'
+  end
+
+  def user_details
+    {
+      id: current_user.id,
+      first_name: current_user.first_name,
+      last_name: current_user.last_name
+    }
   end
 end
