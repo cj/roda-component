@@ -154,7 +154,11 @@ class Roda
         if defined? Oga
           Oga.parse_html(raw_html)
         elsif defined? Nokogiri
-          Nokogiri::HTML(raw_html)
+          if raw_html[/\A<!DOCTYPE/]
+            Nokogiri::HTML(raw_html)
+          else
+            Nokogiri::HTML.fragment(raw_html)
+          end
         else
           warn 'No HTML parsing lib loaded.  Please require Nokogiri or Oga'
         end
