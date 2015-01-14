@@ -55,7 +55,11 @@ class Roda
 
       module InstanceMethods
         def component_opts
-          self.class.component_opts
+          @_component_opts || self.class.component_opts.dup
+        end
+
+        def loaded_component_js
+          request.env['loaded_component_js'] ||= []
         end
 
         def load_component name
@@ -91,7 +95,7 @@ class Roda
             end
           EOF
 
-          ("<script>" + Opal.compile(js) + "</script>")
+          loaded_component_js << ("<script>" + Opal.compile(js) + "</script>")
         end
 
         def component name, options = {}, &block
@@ -118,25 +122,24 @@ class Roda
             end
           end
 
-          if request && !request.env['RODA_COMPONENT_FROM_FAYE']
-            if comp_response.is_a? Roda::Component::DOM
-              content = comp_response.to_xml
-            else
-              content = comp_response
-            end
+          load_component_js comp, action
 
-            unless request.env.include? 'HTTP_X_RODA_COMPONENT_ON_SERVER'
-              content = content.to_s
-              content += load_component_js comp, action
-            end
-
-            content
-          else
-            comp_response
+          if comp_response.is_a? Roda::Component::DOM
+            comp_response = comp_response.to_xml
           end
+
+          if comp_response.is_a?(String) && js = options.delete(:js)
+            comp_response << component_js
+          end
+
+          comp_response
         end
         alias :comp :component
         alias :roda_component :component
+
+        def component_js
+          loaded_component_js.join('\n').to_s
+        end
       end
 
       module ClassMethods

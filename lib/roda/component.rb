@@ -214,10 +214,10 @@ class Roda
 
       # shortcut to comp opts
       def component_opts
-        if server?
-          app.component_opts
-        else
+        if client?
           $component_opts
+        else
+          super
         end
       end
 

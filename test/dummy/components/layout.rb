@@ -11,7 +11,6 @@ class LayoutComp < Roda::Component
       <script type="text/javascript" src="/assets/components"></script>
       <script type="text/javascript" src="/faye/client.js"></script>
     EOF
-
   end
 
   def display data, &block

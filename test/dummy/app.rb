@@ -78,10 +78,10 @@ class TestApp < Roda
       r.run Rack::Directory.new("#{path}/../public/chat/font-awesome-4.1.0/fonts")
     end
 
-    r.root { component(:chat) }
+    r.root { component(:chat, js: true) }
 
-    r.on('login') { component(:login) }
-    r.on('logout') { component(:login, call: :logout) }
+    r.on('login') { component(:login, js: true) }
+    r.on('logout') { component(:login, call: :logout, js: true) }
 
     r.on 'session/:key/:value' do |key, value|
       session[key] = value
