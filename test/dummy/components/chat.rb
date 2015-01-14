@@ -27,17 +27,19 @@ class ChatComponent < Roda::Component
   end
 
   on :join do |data|
-    return user_details unless client?
+    return user_details unless client
 
     `console.log(#{data});`
     puts 'joined'
   end
 
   on :leave do |data|
-    return user_details unless client?
-
-    `console.log(#{data});`
-    puts 'leave'
+    if client?
+      `console.log(#{data});`
+      puts 'leave'
+    else
+      user_details
+    end
   end
 
   def user_details

@@ -292,7 +292,7 @@ class Roda
     alias_method :server, :server?
 
     def client?
-      !server?
+      RUBY_ENGINE == 'opal'
     end
     alias_method :client, :client?
   end
