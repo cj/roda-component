@@ -151,16 +151,16 @@ class Roda
       end
 
       def HTML raw_html
-        if defined? Oga
-          Oga.parse_html(raw_html)
-        elsif defined? Nokogiri
-          if raw_html[/\A<!DOCTYPE/]
-            Nokogiri::HTML(raw_html)
-          else
-            Nokogiri::HTML.fragment(raw_html)
-          end
+        if raw_html[/\A<!DOCTYPE/] || raw_html[/\A<html/]
+          Nokogiri::HTML(raw_html)
         else
-          warn 'No HTML parsing lib loaded.  Please require Nokogiri or Oga'
+          parsed_html = Nokogiri::HTML.fragment(raw_html)
+
+          if parsed_html.children.length == 1
+            parsed_html.children.first
+          else
+            parsed_html
+          end
         end
       end
 
@@ -177,7 +177,7 @@ class Roda
         if args.first.to_s != 'server'
           events.on(*args, &block)
         else
-          on_server &block
+          on_server(&block)
         end
       end
 
@@ -206,7 +206,7 @@ class Roda
       # the reason we ave the raw html is so that we can use it client side.
       def tmpl name, dom, remove = true
         cache[:tmpl][name] = { dom: remove ? dom.remove : dom }
-        cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_xml
+        cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_html
         cache[:tmpl][name]
       end
       alias :add_tmpl :tmpl
@@ -251,7 +251,7 @@ class Roda
     def dom
       if server?
         # TODO: duplicate cache[:dom] so we don't need to parse all the html again
-        @_dom ||= DOM.new(cache[:dom].dom.to_s)
+        @_dom ||= DOM.new(cache[:dom].dom.to_html)
       else
         @_dom ||= DOM.new(Element)
       end
@@ -260,6 +260,7 @@ class Roda
 
     # Grab the template from the cache, use the nokogiri dom or create a
     # jquery element for server side
+    # issue: can't use the cached dom because duping doesn't work.
     def tmpl name
       if t = cache[:tmpl][name]
         DOM.new t[:html]

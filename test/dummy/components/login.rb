@@ -16,6 +16,11 @@ class LoginComponent < Roda::Component
     end
   end
 
+  def logout
+    logout(Models::User)
+    request.redirect 'login'
+  end
+
   on :server do
     def login_with params
       signup = params.delete('signup')
