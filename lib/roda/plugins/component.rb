@@ -95,7 +95,13 @@ class Roda
             end
           EOF
 
-          loaded_component_js << ("<script>" + Opal.compile(js) + "</script>")
+          loaded_component_js << ("<script>#{Opal.compile(js)}</script>")
+
+          file_path = comp.class.instance_methods(false).map { |m|
+              comp.class.instance_method(m).source_location.first
+          }.uniq.first.gsub("#{Dir.pwd}/#{component_opts[:path]}", '').gsub(/\.rb\Z/, '.js')
+
+          loaded_component_js << "<script type=\"text/javascript\" src=\"/#{component_opts[:assets_route]}#{file_path}\"></script>"
         end
 
         def component name, options = {}, &block
@@ -138,7 +144,7 @@ class Roda
         alias :roda_component :component
 
         def component_js
-          loaded_component_js.join('\n').to_s
+          loaded_component_js.join(' ').to_s
         end
       end
 
@@ -175,33 +181,26 @@ class Roda
 
       module RequestMethods
         def components
+          opal = Opal::Server.new do |s|
+            # Append the gems path
+            s.debug = true
+            s.source_map = true
+            s.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
+
+            # Append the path to the components folder
+            s.append_path scope.component_opts[:path]
+
+            s.main = 'roda/component'
+          end
+
           on self.class.component_assets_route_regex do |component, action|
-            # Process the ruby code into javascript
-            Opal::Processor.source_map_enabled = false
+            path = scope.request.env['REQUEST_PATH']
 
-            opal = Opal::Server.new do |s|
-              # Append the gems path
-              s.append_path Dir.pwd
-              s.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
-              # s.append_path Gem::Specification.find_by_name("scrivener-cj").gem_dir + '/lib'
-              # Append the path to the components folder
-              s.append_path scope.component_opts[:path]
-
-              s.main = 'application'
+            if path[/\.js\Z/]
+              run opal.sprockets
+            else
+              run Opal::SourceMapServer.new(opal.sprockets, path)
             end
-
-            sprockets = opal.sprockets
-
-            js = sprockets['roda/component'].to_s
-            # Loop through and and convert all the files to javascript
-            Dir[scope.component_opts[:path] + '/**/*.rb'].each do |file|
-              file = file.gsub(scope.component_opts[:path] + '/', '')
-              js << sprockets[file].to_s
-            end
-            # Set the header to javascript
-            response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'
-
-            js
           end
 
           on self.class.component_route_regex do |comp, type, action|

@@ -41,7 +41,7 @@ class TestApp < Roda
     secret: "na"
 
   plugin :csrf, header: 'X-CSRF-TOKEN', skip: ['POST:/faye']
-  plugin :component, { path: path, token: '687^*&SAD876asd87as6d*&8asd' }
+  plugin :component, { path: 'components', token: '687^*&SAD876asd87as6d*&8asd' }
   plugin :assets, {
     path: "#{path}/../public/chat",
     css_dir: '',
@@ -80,8 +80,8 @@ class TestApp < Roda
 
     r.root { component(:chat, js: true) }
 
-    r.on('login') { component(:login, js: true) }
-    r.on('logout') { component(:login, call: :logout, js: true) }
+    r.on('login')  { component(:login, js: true) }
+    r.on('logout') { component(:login, call: :logout) }
 
     r.on 'session/:key/:value' do |key, value|
       session[key] = value

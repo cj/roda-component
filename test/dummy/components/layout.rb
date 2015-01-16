@@ -8,7 +8,7 @@ class LayoutComp < Roda::Component
     dom.at_css('head').add_child assets(:css)
     dom.at_css('html').add_child assets(:js)
     dom.at_css('html').add_child <<-EOF
-      <script type="text/javascript" src="/assets/components"></script>
+      <script type="text/javascript" src="/assets/components/roda/component.js"></script>
       <script type="text/javascript" src="/faye/client.js"></script>
     EOF
   end

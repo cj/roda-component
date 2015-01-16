@@ -1,3 +1,5 @@
+require_relative 'forms/login'
+
 class LoginComponent < Roda::Component
   comp_name :login
   comp_html "../public/chat/login.html"
@@ -17,7 +19,7 @@ class LoginComponent < Roda::Component
   end
 
   def logout
-    logout(Models::User)
+    super(Models::User)
     request.redirect 'login'
   end
 
@@ -96,11 +98,6 @@ class LoginComponent < Roda::Component
   end
 
   protected
-
-  def logout
-    logout(Models::User)
-    request.redirect 'login'
-  end
 
   def display_errors errors
     errors.each do |key, error|
