@@ -1,20 +1,16 @@
-require 'delegate'
-
 class Roda
   class Component
-    class DOM < SimpleDelegator
+    class DOM
       attr_accessor :dom, :raw_html
 
       def initialize html
-        @raw_html = html.dup
+        @raw_html = html
 
         if server?
           @dom = Component::HTML(raw_html)
         else
           @dom = raw_html.is_a?(String) ? Element[raw_html] : raw_html
         end
-
-        super dom
       end
 
       def find string, &block
@@ -38,7 +34,11 @@ class Roda
           end
         end
 
-        node
+        if server?
+          self
+        else
+          node
+        end
       end
 
       def html= content
@@ -54,7 +54,7 @@ class Roda
       def html content = false
         if !content
           if server?
-            node.to_html
+            node.inner_html
           else
             node ? node.html : dom.html
           end
@@ -65,6 +65,17 @@ class Roda
 
       def node
         @node || dom
+      end
+
+      # This allows you to use all the nokogiri or opal jquery methods if a
+      # global one isn't set
+      def method_missing method, *args, &block
+        # respond_to?(symbol, include_all=false)
+        if dom.respond_to? method, true
+          dom.send method, *args, &block
+        else
+          super
+        end
       end
 
       private
