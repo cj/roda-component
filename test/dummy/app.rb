@@ -41,7 +41,7 @@ class TestApp < Roda
     secret: "na"
 
   plugin :csrf, header: 'X-CSRF-TOKEN', skip: ['POST:/faye']
-  plugin :component, { path: 'components', token: '687^*&SAD876asd87as6d*&8asd' }
+  plugin :component, { path: 'components', token: '687^*&SAD876asd87as6d*&8asd', debug: true }
   plugin :assets, {
     path: "#{path}/../public/chat",
     css_dir: '',

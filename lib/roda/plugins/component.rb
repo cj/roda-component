@@ -24,6 +24,7 @@ class Roda
         opts[:cache]             = app.thread_safe_cache if opts.fetch(:cache, true)
         opts[:path]            ||= 'components'
         opts[:route]           ||= 'components'
+        opts[:debug]           ||= false
         opts[:assets_route]    ||= 'assets/components'
         opts[:class]           ||= Roda::Component
         opts[:settings]        ||= {}
@@ -183,8 +184,13 @@ class Roda
         def components
           opal = Opal::Server.new do |s|
             # Append the gems path
-            s.debug = true
-            s.source_map = true
+            if scope.component_opts[:debug]
+              s.debug = true
+              s.source_map = true
+            else
+              s.source_map = false
+            end
+
             s.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
 
             # Append the path to the components folder
@@ -198,7 +204,11 @@ class Roda
 
             if path[/\.js\Z/]
               run opal.sprockets
-            else
+            elsif scope.component_opts[:debug]
+              if path[/\.rb\Z/] && js_file = scope.request.env['PATH_INFO'].scan(/(.*\.map)/)
+                scope.request.env['PATH_INFO'] = path.gsub(js_file.last.first, '').gsub("/#{scope.component_opts[:assets_route]}", '')
+              end
+
               run Opal::SourceMapServer.new(opal.sprockets, path)
             end
           end
