@@ -16,3 +16,4 @@ mkmf.log
 .env*
 .gs
 *.gem
+/test/dummy/.sass-cache/
