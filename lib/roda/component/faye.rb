@@ -202,8 +202,8 @@ else
 
             data = app.roda_component(:"#{component_name}", { trigger: (joining ? :join : :leave), public_id: public_id, private_id: private_id })
 
-            client = ::Faye::Client.new("#{request.env['HTTP_ORIGIN']}/faye")
-            client.set_header 'X-CSRF-TOKEN', message['ext']['csrfToken']
+            url = "http#{request.env['SERVER_PORT'] == '443' ? 's' : ''}://#{request.env['SERVER_NAME']}:#{request.env['SERVER_PORT']}/faye"
+            client = ::Faye::Client.new(url)
             client.publish "/components/#{component_name}", type: (joining ? 'join' : 'leave'), public_id: public_id, token: app.component_opts[:token], local: data
           end
 

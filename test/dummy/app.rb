@@ -37,7 +37,7 @@ class TestApp < Roda
   # use BetterErrors::Middleware
   use Shield::Middleware, "/login"
   use Rack::Session::Cookie,
-    key:    "test:roda:components",
+    key:    "test:roda:component",
     secret: "na"
 
   plugin :csrf, header: 'X-CSRF-TOKEN', skip: ['POST:/faye']
