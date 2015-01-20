@@ -16,10 +16,7 @@ require 'roda/component/dom'
 require 'roda/component/events'
 
 if RUBY_ENGINE == 'opal'
-  class Element
-    alias_native :val
-    alias_native :serialize_array, :serializeArray
-  end
+  require 'roda/component/element'
 
   $component_opts ||= {
     events: {},
