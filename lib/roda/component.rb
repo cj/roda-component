@@ -40,7 +40,7 @@ class Roda
         $faye.subscribe "/components/#{self.class._name}" do |msg|
           msg = Native(msg)
 
-          trigger :"#{msg[:type]}", msg unless $faye.public_id == msg[:public_id]
+          trigger :"#{msg[:type]}", msg['local'], msg unless $faye.public_id == msg[:public_id]
         end
 
         $faye.on 'transport:up' do

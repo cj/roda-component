@@ -14,6 +14,12 @@ class ChatComponent < Roda::Component
     end
   end
 
+  on :server do
+    def get_user_list
+
+    end
+  end
+
   on :reconnect do
     puts 'reconnected'
   end
