@@ -1,0 +1,80 @@
+body {
+    background: #eee;
+    font-family: arial;
+}
+
+h1 {
+    font-size: 24px;
+    color: #bbb;
+    text-decoration: underline;
+    margin-bottom: 30px;
+}
+
+a {
+    color: coral;
+}
+
+#form {
+    margin: 0 auto;
+    text-align: center;
+}
+
+input {
+    padding: 10px;
+    margin: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 160px;
+}
+input.long {
+    width: 346px;
+}
+input:focus {
+    outline: 0;
+    border-color: coral;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 0;
+    border-radius: 4px;
+    margin-top: 20px;
+    background: coral;
+    border: 0;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+button:focus {
+    outline: 0;
+}
+
+.floating-placeholder {
+    padding-top: 20px;
+    margin-bottom: 5px;
+    position: relative;
+    display: inline-block;
+}
+
+.floating-placeholder label {
+    position: absolute;
+    line-height: 20px;
+    left:5px; bottom:8px;
+    opacity: 0;
+    font-size: 12px;
+    font-weight: bold;
+    color: coral;
+    transition: all .2s;
+    pointer-events: none;
+}
+.floating-placeholder.float label {
+    bottom: 38px;
+    opacity: 1;
+}
+
+footer {
+    margin-top: 40px;
+    font-size: 12px;
+    color: #bbb;
+    text-align: center;
+}

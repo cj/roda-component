@@ -3,10 +3,6 @@ require 'opal-jquery'
 
 unless RUBY_ENGINE == 'opal'
   require 'tilt'
-
-  if defined? Oga
-    require 'roda/component/oga'
-  end
 end
 
 require "base64"

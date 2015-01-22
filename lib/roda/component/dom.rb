@@ -7,7 +7,7 @@ class Roda
         @raw_html = html
 
         if server?
-          @dom = Component::HTML(raw_html)
+          @dom = raw_html.is_a?(String) ? Component::HTML(raw_html): raw_html
         else
           @dom = raw_html.is_a?(String) ? Element[raw_html] : raw_html
         end
@@ -15,30 +15,28 @@ class Roda
 
       def find string, &block
         if server?
-          @node = dom.css string
+          @node = dom.css(string)
         else
-          @node = dom.find string
+          @node = dom.find(string)
         end
 
         if block
           if server?
             node.each do |n|
-              block.call n
+              block.call DOM.new n
             end
           else
-            block.call node
+            block.call DOM.new node
           end
         else
           if server?
-            @node = node.first
+            @node = DOM.new node.first
+          else
+            @node = DOM.new node
           end
         end
 
-        if server?
-          self
-        else
-          node
-        end
+        node
       end
 
       def html= content

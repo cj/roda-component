@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>CodePen - Floating Placeholders</title>
+
+    <link rel="stylesheet" href="css/style.css" media="screen" type="text/css" />
+
+</head>
+
+<body>
+
+  <form id="form" method='POST'>
+    <h1>Floating Placeholders</h1>
+    <div class="floating-placeholder">
+        <input type="text" placeholder="Name" autofocus name='user[name]'/>
+        <label></label>
+    </div>
+    <div class="floating-placeholder">
+        <input type="email" placeholder="Email" name='user[email]'/>
+        <label></label>
+    </div>
+    <br/>
+    <div class="floating-placeholder">
+        <input class="long" type="text" placeholder="Address" name='user[address][line1]'/>
+        <label></label>
+    </div>
+    <br/>
+    <div class="floating-placeholder">
+        <input type="text" placeholder="ZIP Code" name='user[address][zip]'/>
+        <label></label>
+    </div>
+    <div class="floating-placeholder">
+        <input type="text" placeholder="City" name='user[address][city]'/>
+        <label></label>
+    </div>
+    <br/>
+    <div class="floating-placeholder">
+        <input type="text" placeholder="Phone #" name='user[phone]'/>
+        <label></label>
+    </div>
+    <br/>
+    <button>SUBMIT</button>
+</form>
+</body>
+
+</html>

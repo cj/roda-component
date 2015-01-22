@@ -97,7 +97,7 @@ class Roda
         #                                when the validation fails.
         def assert_format(att, format, error = [att, :format])
           if assert_present(att, error)
-            assert(send(att).to_s.match(format), error)
+            assert(_attributes.send(att).to_s.match(format), error)
           end
         end
 
@@ -107,8 +107,20 @@ class Roda
         # @param [Symbol] att The attribute you wish to verify the presence of.
         # @param [Array<Symbol, Symbol>] error The error that should be returned
         #                                when the validation fails.
-        def assert_present(att, error = [att, :not_present])
-          assert(!send(att).to_s.empty?, error)
+        def assert_present(att, error = [att, :not_present], klass = false)
+          if error.is_a? Class
+            error_new = klass.dup
+            klass = error
+            error = error_new || [att, :not_present]
+
+            options = {}
+            options[:key] = _options[:key] if _options.key? :key
+
+            f = klass.new(_attributes.send(att), options)
+            assert(f.valid?, [att, f.errors])
+          else
+            assert(!_attributes.send(att).to_s.empty?, error)
+          end
         end
 
         # Checks if all the characters of an attribute is a digit.
@@ -139,12 +151,12 @@ class Roda
         end
 
         def assert_member(att, set, err = [att, :not_valid])
-          assert(set.include?(send(att)), err)
+          assert(set.include?(_attributes.send(att)), err)
         end
 
         def assert_length(att, range, error = [att, :not_in_range])
           if assert_present(att, error)
-            val = send(att).to_s
+            val = _attributes.send(att).to_s
             assert range.include?(val.length), error
           end
         end
@@ -173,7 +185,7 @@ class Roda
         # @param [Array<Symbol, Symbol>] error The error that should be returned
         #                                when the validation fails.
         def assert_equal(att, value, error = [att, :not_equal])
-          assert value === send(att), error
+          assert value === _attributes.send(att), error
         end
 
         # The grand daddy of all assertions. If you want to build custom

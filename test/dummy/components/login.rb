@@ -30,18 +30,18 @@ class LoginComponent < Roda::Component
 
       if signup
         if form.valid?
-          Models::User.create form.slice(:first_name, :last_name, :email, :password)
-          login(Models::User, form.email, form.password)
+          TestApp::Models::User.create form.slice(:first_name, :last_name, :email, :password)
+          login(TestApp::Models::User, form.email, form.password)
           {success: true}
         else
           {success: false, errors: form.errors}
         end
       else
-        user = Models::User.where(email: form.email).first
+        user = TestApp::Models::User.where(email: form.email).first
 
         return {success: false, reason: 'Account doesn\'t exist.'} unless user
 
-        if login(Models::User, form.email, form.password)
+        if login(TestApp::Models::User, form.email, form.password)
           {success: true}
         else
           {success: false, errors: { email: ['Email and Password combination is incorrect.']}}
@@ -50,7 +50,7 @@ class LoginComponent < Roda::Component
     end
   end
 
-  on :form, 'form.main-form', class: Forms::Login do |form, el, evt|
+  on :form, 'form.main-form', Forms::Login do |form, el, evt|
     if form.valid?
       login_with form.attributes do |res|
         if res['success']

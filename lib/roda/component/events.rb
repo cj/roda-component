@@ -1,12 +1,19 @@
 class Roda
   class Component
+    class ::Hash
+      def deep_merge(second)
+        merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }
+        self.merge(second, &merger)
+      end
+    end
+
     class Events < Struct.new(:klass, :component_opts, :scope, :request)
-      def on name, options = {}, extra_opts = false, &block
+      def on name, options = {}, form_klass = false, extra_opts = false, &block
         if client? && options.is_a?(String)
           class_name   = klass._name
           class_events = (events[class_name] ||= {})
           event        = (class_events[:_jquery_events] ||= [])
-          event        << [block, class_name, options, extra_opts, name]
+          event        << [block, class_name, options, form_klass, extra_opts, name]
         elsif options.is_a?(Hash)
           limit_if = options.delete(:if) || []
           limit_if = [limit_if] unless limit_if.is_a? Array
@@ -28,7 +35,9 @@ class Roda
         return unless e = events[klass._name]
 
         (e[:_jquery_events] || []).each do |event|
-          block, comp, selector, opts, name = event
+          block, comp, selector, form_klass, opts, name = event
+
+          opts = {} unless opts
 
           name = name.to_s
 
@@ -38,10 +47,9 @@ class Roda
 
             Component::Instance.new(component(comp), scope).instance_exec el, &block
           when 'form'
-            klass = opts.delete :class
-            warn 'missing form class option' unless klass
+            warn 'missing form class option' unless form_klass
 
-            el = DOM.new Element.find(selector)
+            el = Element.find(selector)
 
             el.on :submit do |evt|
               evt.prevent_default
@@ -61,7 +69,20 @@ class Roda
                 params[name] = value
               end
 
-              form = klass.new params, dom: el
+              params_obj = {}
+
+              params.each do |param, value|
+                keys = param.gsub(/[^a-z0-9_]/, '|').gsub(/\|\|/, '|').gsub(/\|$/, '').split('|')
+                params_obj = params_obj.deep_merge keys.reverse.inject(value) { |a, n| { n => a } }
+              end
+
+              opts[:dom] = el
+
+              if opts && key = opts[:key]
+                form = form_klass.new params_obj[key], opts
+              else
+                form = form_klass.new params_obj, opts
+              end
 
               Component::Instance.new(component(comp), scope).instance_exec form, evt.current_target, evt, &block
             end

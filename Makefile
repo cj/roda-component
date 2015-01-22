@@ -22,7 +22,7 @@ install:
 server:
 	bundle
 	# cd test/dummy && touch dummy.db && rm dummy.db && bundle exec thin start -p 8080
-	cd test/dummy && touch dummy.db && bundle exec thin start -p 8080
+	cd test/dummy && touch dummy.db && bundle exec roda server
 
 test:
 	bundle exec pry-test --async

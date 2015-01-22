@@ -34,6 +34,8 @@ class TestApp < Roda
     end
   end
 
+  require_relative 'models/user'
+
   # use BetterErrors::Middleware
   use Shield::Middleware, "/login"
   use Rack::Session::Cookie,
@@ -43,21 +45,33 @@ class TestApp < Roda
   plugin :csrf, header: 'X-CSRF-TOKEN', skip: ['POST:/faye']
   plugin :component, { path: 'components', token: '687^*&SAD876asd87as6d*&8asd', debug: true }
   plugin :assets, {
-    path: "#{path}/../public/chat",
+    path: "#{path}/../public",
     css_dir: '',
     js_dir: '',
-    css: [
-      'bower/open-sans-fontface/open-sans.css',
-      'bower/font-awesome/css/font-awesome.css',
-      'bower/jScrollPane/style/jquery.jscrollpane.css',
-      'css/style.css',
-      'css/login.scss'
-    ],
-    js: [
-      'bower/jquery/dist/jquery.js',
-      'bower/jScrollPane/script/jquery.mousewheel.js',
-      'bower/jScrollPane/script/jquery.jscrollpane.js'
-    ]
+    group_subdirs: false,
+    css: {
+      chat: [
+        'bower/open-sans-fontface/open-sans.css',
+        'bower/font-awesome/css/font-awesome.css',
+        'bower/jScrollPane/style/jquery.jscrollpane.css',
+        'chat/css/style.css',
+        'chat/css/login.scss'
+      ],
+      form: [
+        'form/css/style.css'
+      ]
+    },
+    js: {
+      chat: [
+        'bower/jquery/dist/jquery.js',
+        'bower/jScrollPane/script/jquery.mousewheel.js',
+        'chat/bower/jScrollPane/script/jquery.jscrollpane.js'
+      ],
+      form: [
+        'bower/jquery/dist/jquery.js',
+        'form/js/index.js'
+      ]
+    }
   }
 
   def current_user
@@ -79,6 +93,10 @@ class TestApp < Roda
     end
 
     r.root { component(:chat, js: true) }
+
+    r.on('form') do
+      component(:form, js: true)
+    end
 
     r.on('login')  { component(:login, js: true) }
     r.on('logout') { component(:login, call: :logout) }
