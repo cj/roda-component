@@ -7,14 +7,18 @@ class Roda
 
       class Attributes
         def set_values(atts)
+          @_attributes = []
+
           atts.each do |key, val|
             send(:"#{key}=", val)
+            @_attributes << key
           end
         end
 
         def set_attr_accessors attrs
           attrs.each do |attr|
             define_singleton_method "#{attr}=" do |value|
+              value = value.to_obj if value.is_a? Hash
               instance_variable_set(:"@#{attr}", value)
             end
 
@@ -22,6 +26,14 @@ class Roda
               instance_variable_get(:"@#{attr}")
             end
           end
+        end
+
+        def _attributes
+          @_attributes ||= []
+        end
+
+        def empty?
+          _attributes.empty?
         end
       end
 
@@ -82,7 +94,7 @@ class Roda
         Hash.new.tap do |atts|
           _attributes.instance_variables.each do |ivar|
             # todo: figure out why it's setting @constructor and @toString
-            next if ivar == :@constructor || ivar == :@toString
+            next if ivar == :@constructor || ivar == :@toString || ivar == :@_attributes
 
             att = ivar[1..-1].to_sym
             atts[att] = _attributes.send(att)
@@ -199,6 +211,10 @@ class Roda
         else
           error
         end
+      end
+
+      def empty?
+        _attributes.empty?
       end
     end
   end

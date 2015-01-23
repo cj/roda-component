@@ -10,6 +10,7 @@ require 'roda/component/faye'
 require 'roda/component/instance'
 require 'roda/component/dom'
 require 'roda/component/events'
+require 'roda/component/titleize'
 
 if RUBY_ENGINE == 'opal'
   require 'roda/component/element'
@@ -23,6 +24,28 @@ if RUBY_ENGINE == 'opal'
 end
 
 class Roda
+  class ::Hash
+    # add keys to hash
+    def to_obj
+      self.each do |k,v|
+        if v.kind_of? Hash
+          v.to_obj
+        end
+        k=k.to_s.gsub(/\.|\s|-|\/|\'/, '_').downcase.to_sym
+
+        ## create and initialize an instance variable for this key/value pair
+        self.instance_variable_set("@#{k}", v)
+
+        ## create the getter that returns the instance variable
+        self.class.send(:define_method, k, proc{self.instance_variable_get("@#{k}")})
+
+        ## create the setter that sets the instance variable
+        self.class.send(:define_method, "#{k}=", proc{|v| self.instance_variable_set("@#{k}", v)})
+      end
+      return self
+    end
+  end
+
   class Component
     attr_accessor :scope, :cache
 
@@ -276,6 +299,90 @@ class Roda
       else
         super
       end
+    end
+
+    def render_fields data, options = {}
+      data = data.is_a?(Hash) ? data.to_obj : data
+
+      l_dom = options[:dom] || dom
+
+      l_dom.find("[data-if]") do |field_dom|
+        value = get_value_for field_dom['data-if'], data
+
+        unless value
+          field_dom.remove
+        end
+      end
+
+      l_dom.find("[data-unless]") do |field_dom|
+        value = get_value_for field_dom['data-unless'], data
+
+        if value
+          field_dom.remove
+        end
+      end
+
+      l_dom.find("[data-field]") do |field_dom|
+        if field = field_dom['data-field']
+          value = get_value_for field, data
+
+          if !value.nil?
+            value = value.to_s
+
+            if value != value.upcase && !value.match(Roda::Component::Form::EMAIL)
+              field_value = value.titleize
+            else
+              field_value = value
+            end
+
+            field_value = 'No'  if field_value == 'False'
+            field_value = 'Yes' if field_value == 'True'
+
+            field_dom.html = field_value
+          else
+            field_dom.html = ''
+          end
+        end
+      end
+    end
+
+    def get_value_for field, data
+      field = (field || '').split '.'
+
+      if field.length > 1
+        value = data.is_a?(Hash) ? data.to_obj : data
+
+        field.each_with_index do |f, i|
+          # might not have the parent object
+          unless !value.empty?
+            value = ''
+            next
+          end
+
+          if (i+1) < field.length
+            begin
+              value = value.send(f)
+            rescue
+              value = nil
+            end
+          else
+            begin
+              value = value.respond_to?(:present) ? value.present("print_#{f}") : value.send(f)
+            rescue
+              value = nil
+            end
+          end
+
+        end
+      else
+        begin
+          value = data.respond_to?(:present) ? data.present("print_#{field.first}") : data.send(field.first)
+        rescue
+          value = nil
+        end
+      end
+
+      value
     end
 
     private

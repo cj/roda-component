@@ -21,12 +21,8 @@ class Roda
         end
 
         if block
-          if server?
-            node.each do |n|
-              block.call DOM.new n
-            end
-          else
-            block.call DOM.new node
+          node.each do |n|
+            block.call DOM.new n
           end
         else
           if server?

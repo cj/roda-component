@@ -19,7 +19,7 @@ class LoginComponent < Roda::Component
   end
 
   def logout
-    super(Models::User)
+    super(TestApp::Models::User)
     request.redirect 'login'
   end
 

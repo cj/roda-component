@@ -20,20 +20,28 @@ class Form < Roda::Component
 
     dom.at_css('head').add_child csrf_metatag
 
-    form = Forms::Login.new({
+    data = {
       name: 'test',
       address: {
         zip: 90036
       }
-    }, key: :user, dom: dom.find('#form'))
+    }
+
+    form_dom = dom.find('#form')
+    form     = Forms::Login.new(data, key: :user, dom: form_dom)
 
     form.render_values
+
+    render_fields data, dom: dom.find('.profile')
 
     dom
   end
 
   on :form, '#form', Forms::Login, key: :user do |form, el, evt|
+    render_fields form, dom: dom.find('.profile')
+
     if form.valid?
+      puts 'yay, vaild!'
     else
       form.display_errors
     end
