@@ -33,8 +33,8 @@ class Roda
         node
       end
 
-      def data key = false, value = false
-        if server?
+      unless RUBY_ENGINE == 'opal'
+        def data key = false, value = false
           d = Hash[node.xpath("@*[starts-with(name(), 'data-')]").map{|a| [a.name, a.value]}]
 
           if !key
@@ -44,8 +44,6 @@ class Roda
           else
             node["data-#{key}"] = value
           end
-        else
-          super
         end
       end
 

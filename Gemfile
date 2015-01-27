@@ -5,7 +5,6 @@ gemspec
 
 gem 'roda-bin'
 gem "nokogiri", "~> 1.6.5", require: false
-gem "opal-browser", github: 'opal/opal-browser'
 gem 'awesome_print'
 gem 'tilt'
 gem 'sqlite3'
