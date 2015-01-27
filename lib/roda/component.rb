@@ -91,7 +91,20 @@ class Roda
 
       def on_server &block
         if server?
+          m = Module.new(&block)
+
           yield
+
+          m.public_instance_methods(false).each do |meth|
+            alias_method :"original_#{meth}", :"#{meth}"
+            define_method "#{meth}" do |*args, &blk|
+              if blk
+                blk.call send("original_#{meth}", *args)
+              else
+                send("original_#{meth}", *args)
+              end
+            end
+          end
         else
           m = Module.new(&block)
 
@@ -105,7 +118,7 @@ class Roda
                   'X-CSRF-TOKEN' => Element.find('meta[name=_csrf]').attr('content'),
                   'X-RODA-COMPONENT-ON-SERVER' => true
                 },
-                payload: args.first) do |response|
+                payload: args) do |response|
 
                   # We set the new csrf token
                   xhr  = Native(response.xhr)

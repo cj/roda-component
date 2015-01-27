@@ -69,7 +69,7 @@ class Roda
           ).new self
         end
 
-        def load_component_js comp, action = :display
+        def load_component_js comp, action = :display, options = {}
           # grab a copy of the cache
           cache = comp.class.cache.dup
           # remove html and dom cache as we don't need that for the client
@@ -111,17 +111,26 @@ class Roda
           action  = options.delete(:call)    || :display
           trigger = options.delete(:trigger) || false
           js      = options.delete(:js)
+          args    = options.delete(:args)
 
           # call action
           # TODO: make sure the single method parameter isn't a block
           if trigger
-            comp_response = comp.trigger trigger, options
+            if args
+              comp_response = comp.trigger trigger, *args
+            else
+              comp_response = comp.trigger trigger, options
+            end
           else
             # We want to make sure it's not a method that already exists in ruba
             # otherwise that would give us a false positive.
             if comp.respond_to?(action) && !"#{comp.method(action)}"[/\(Kernel\)/]
               if comp.method(action).parameters.length > 0
-                comp_response = comp.send(action, options, &block)
+                if args
+                  comp_response = comp.send(action, *args, &block)
+                else
+                  comp_response = comp.send(action, options, &block)
+                end
               else
                 comp_response = comp.send(action, &block)
               end
@@ -130,7 +139,7 @@ class Roda
             end
           end
 
-          load_component_js comp, action
+          load_component_js comp, action, options
 
           if js && comp_response.is_a?(Roda::Component::DOM)
             comp_response = comp_response.to_xml
@@ -219,6 +228,10 @@ class Roda
               data = JSON.parse scope.request.body.read
             else
               data = {}
+            end
+
+            if data.is_a? Array
+              data = {args: data}
             end
 
             case type
