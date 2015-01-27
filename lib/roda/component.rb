@@ -14,6 +14,7 @@ require 'roda/component/titleize'
 
 if RUBY_ENGINE == 'opal'
   require 'roda/component/element'
+  require 'roda/component/history'
 
   $component_opts ||= {
     events: {},
@@ -172,7 +173,7 @@ class Roda
         else
           parsed_html = Nokogiri::HTML.fragment(raw_html)
 
-          if parsed_html.children.length == 1
+          if parsed_html.children.length >= 1
             parsed_html.children.first
           else
             parsed_html
@@ -309,7 +310,7 @@ class Roda
       l_dom.find("[data-if]") do |field_dom|
         value = get_value_for field_dom['data-if'], data
 
-        unless value
+        unless value.present?
           field_dom.remove
         end
       end
@@ -317,7 +318,7 @@ class Roda
       l_dom.find("[data-unless]") do |field_dom|
         value = get_value_for field_dom['data-unless'], data
 
-        if value
+        if value.present?
           field_dom.remove
         end
       end
@@ -344,6 +345,8 @@ class Roda
           end
         end
       end
+
+      l_dom
     end
 
     def get_value_for field, data

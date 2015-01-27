@@ -7,17 +7,17 @@ class Roda
         @raw_html = html
 
         if server?
-          @dom = raw_html.is_a?(String) ? Component::HTML(raw_html): raw_html
+          @dom = raw_html.is_a?(String) ? Component::HTML(raw_html.dup): raw_html
         else
-          @dom = raw_html.is_a?(String) ? Element[raw_html] : raw_html
+          @dom = raw_html.is_a?(String) ? Element[raw_html.dup] : raw_html
         end
       end
 
       def find string, &block
         if server?
-          @node = dom.css(string)
+          node = DOM.new dom.css(string)
         else
-          @node = dom.find(string)
+          node = DOM.new dom.find(string)
         end
 
         if block
@@ -26,13 +26,27 @@ class Roda
           end
         else
           if server?
-            @node = DOM.new node.first
-          else
-            @node = DOM.new node
+            node = DOM.new node.first
           end
         end
 
         node
+      end
+
+      def data key = false, value = false
+        if server?
+          d = Hash[node.xpath("@*[starts-with(name(), 'data-')]").map{|a| [a.name, a.value]}]
+
+          if !key
+            d
+          elsif key && !value
+            d[key]
+          else
+            node["data-#{key}"] = value
+          end
+        else
+          super
+        end
       end
 
       def html= content

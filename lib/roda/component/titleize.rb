@@ -82,11 +82,11 @@ class String
   #   "notes on a scandal" # => "Notes on a Scandal"
   #   "the good german"    # => "The Good German"
   def titleize(opts={})
-    if defined? ActiveSupport
-      ActiveSupport::Inflector.titleize(self, opts)
-    else
+    # if defined? ActiveSupport
+    #   ActiveSupport::Inflector.titleize(self, opts)
+    # else
       Titleize.titleize(self)
-    end
+    # end
   end
   alias_method :titlecase, :titleize
 

@@ -9,6 +9,8 @@ class Roda
 
     class Events < Struct.new(:klass, :component_opts, :scope, :request)
       def on name, options = {}, form_klass = false, extra_opts = false, &block
+        options = '' if options.empty? && (name.to_s == 'history_change' || name.to_s == 'ready')
+
         if client? && options.is_a?(String)
           class_name   = klass._name
           class_events = (events[class_name] ||= {})
@@ -34,7 +36,14 @@ class Roda
       def trigger_jquery_events
         return unless e = events[klass._name]
 
-        (e[:_jquery_events] || []).each do |event|
+        vip_list = ['history_change']
+
+        j_events = (e[:_jquery_events] || [])
+        j_events = j_events.sort_by do |x|
+          [vip_list.index(x.last.to_s) || vip_list.length, j_events.index(x)]
+        end
+
+        j_events.each do |event|
           block, comp, selector, form_klass, opts, name = event
 
           opts = {} unless opts
@@ -43,9 +52,13 @@ class Roda
 
           case name.to_s
           when 'ready'
-            el = Element.find(selector)
+            el = Element.find(selector != '' ? selector : 'body')
 
             Component::Instance.new(component(comp), scope).instance_exec el, &block
+          when 'history_change'
+            $window.history.change do |he|
+              Component::Instance.new(component(comp), scope).instance_exec he, &block
+            end
           when 'form'
             warn 'missing form class option' unless form_klass
 

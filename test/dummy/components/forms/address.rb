@@ -1,6 +1,6 @@
 module Forms
   class Address < Roda::Component::Form
-    attr_accessor :line1, :line2, :city, :state, :zip
+    attr_accessor :line1, :line2, :city, :zip
 
     def validate
       assert_present :line1

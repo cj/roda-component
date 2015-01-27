@@ -90,8 +90,8 @@ class Roda
               Document.ready? do
                 c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
                 c.instance_variable_set(:@_cache, JSON.parse(Base64.decode64('#{cache}')))
-                c.#{action}(JSON.parse(Base64.decode64('#{options}')))
                 c.events.trigger_jquery_events
+                c.#{action}(JSON.parse(Base64.decode64('#{options}')))
               end
             end
           EOF
@@ -110,6 +110,7 @@ class Roda
 
           action  = options.delete(:call)    || :display
           trigger = options.delete(:trigger) || false
+          js      = options.delete(:js)
 
           # call action
           # TODO: make sure the single method parameter isn't a block
@@ -131,11 +132,11 @@ class Roda
 
           load_component_js comp, action
 
-          if comp_response.is_a? Roda::Component::DOM
+          if js && comp_response.is_a?(Roda::Component::DOM)
             comp_response = comp_response.to_xml
           end
 
-          if comp_response.is_a?(String) && js = options.delete(:js)
+          if comp_response.is_a?(String) && js
             comp_response << component_js
           end
 
