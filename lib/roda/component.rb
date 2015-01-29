@@ -370,7 +370,7 @@ class Roda
 
         field.each_with_index do |f, i|
           # might not have the parent object
-          unless !value.empty?
+          if (value.respond_to?('empty?') ? value.empty? : !value.present?)
             value = ''
             next
           end
