@@ -1,9 +1,24 @@
 require 'roda/component/form/validations'
+require 'forwardable'
 
 class Roda
   class Component
     class Form
       include Validations
+
+      module Delegates
+        def _delegates(*names)
+          accessors = Module.new do
+            extend Forwardable # DISCUSS: do we really need Forwardable here?
+            names.each do |name|
+              delegate [name, "#{name}="] => :_attributes
+            end
+          end
+          include accessors
+        end
+      end
+
+      extend Delegates
 
       class Attributes
         def set_values(atts)
@@ -22,6 +37,8 @@ class Roda
             define_singleton_method "#{attr}=" do |value|
               value = value.to_obj if value.is_a? Hash
               instance_variable_set(:"@#{attr}", value)
+              @_attributes ||= []
+              @_attributes << attr
             end
 
             define_singleton_method attr do
@@ -78,10 +95,16 @@ class Roda
         @_attributes.set_attr_accessors _attr_accessors
         @_attributes.set_values _data
 
+        _data.each do |key, val|
+          send("#{key}=", val)
+        end
+
         _form.each do |key, klass|
           opts = {}
-          opts[key] = _data.send(key) if _data.respond_to?(key)
+          opts[key] = klass.new(_data.send(key)) if _data.respond_to?(key)
           @_attributes.set_values opts
+
+          send("#{key}=", opts[key])
         end
       end
 
@@ -101,15 +124,14 @@ class Roda
             end
           end
         end
+
+        _delegates(*_attr_accessors)
       end
 
       def method_missing method, *args, &block
-        # respond_to?(symbol, include_all=false)
-        if _attributes.respond_to? method, true
-          _attributes.send method, *args, &block
-        else
-          super
-        end
+        return if method[/\=\z/]
+
+        super
       end
 
       # Return hash of attributes and values.
@@ -131,10 +153,11 @@ class Roda
         data.each do |k, v|
           if klass = _form[k.to_s.to_sym]
             data = data[k]
+            data = data.attributes if data.is_a?(Form)
 
             f = klass.new data
             k = "#{k}_attributes"
-            data = f.attributes
+            data = f.model_attributes
 
             hash[k] = model_attributes data
           elsif v.is_a? Hash
@@ -219,13 +242,6 @@ class Roda
           keys.each do |k|
             begin
               value = value ? value.send(k) : send(k)
-
-              if klass = _form[k.to_s.to_sym]
-                options = {}
-                options[:key] = _options[:key] if _options.key? :key
-
-                value = klass.new(value, options)
-              end
             rescue
               value = ''
             end
@@ -244,7 +260,15 @@ class Roda
         end
       end
 
+      def _attributes
+        @_attributes ||= {}
+      end
+
       protected
+
+      def _data
+        @_data ||= {}
+      end
 
       def self._attr_accessors
         @_attr_accessors
@@ -254,16 +278,8 @@ class Roda
         @_form
       end
 
-      def _attributes
-        @_attributes ||= []
-      end
-
       def _form
         self.class._form
-      end
-
-      def _data
-        @_data ||= []
       end
 
       def _attr_accessors

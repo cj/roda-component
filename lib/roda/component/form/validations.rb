@@ -112,7 +112,7 @@ class Roda
             options = {}
             options[:key] = _options[:key] if _options.key? :key
 
-            f = klass.new(send(att), options)
+            f = klass.new(send(att).attributes, options)
             assert(f.valid?, [att, f.errors])
           else
             binding.pry if att.to_s == 'line1'
