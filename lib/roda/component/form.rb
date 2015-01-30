@@ -125,6 +125,28 @@ class Roda
         end
       end
 
+      def model_attributes data = attributes
+        hash = {}
+
+        data.each do |k, v|
+          if klass = _form[k.to_s.to_sym]
+            data = data[k]
+
+            f = klass.new data
+            k = "#{k}_attributes"
+            data = f.attributes
+
+            hash[k] = model_attributes data
+          elsif v.is_a? Hash
+            hash[k] = model_attributes data[k]
+          else
+            hash[k] = v
+          end
+        end
+
+        hash
+      end
+
       def slice(*keys)
         Hash.new.tap do |atts|
           keys.each do |att|
@@ -134,6 +156,7 @@ class Roda
       end
 
       def display_errors options = {}
+        dom = options.delete(:dom) || _dom
         d_errors = errors
 
         if override_errors = options[:override_errors]
@@ -164,11 +187,10 @@ class Roda
               i != 0 ? "[#{field}]" : field
             end.join
 
-            field_error_dom = options.delete :tmpl
-            field_error_dom = DOM.new('<span class="field-error"><span>') unless field_error_dom
+            field_error_dom = DOM.new(`#{options[:tmpl].dom}[0].outerHTML` || '<span class="field-error"><span>')
             field_error_dom.html _error_name(key, error)
 
-            field = _dom.find("input[name='#{name}']")
+            field = dom.find("[name='#{name}']")
             field.before field_error_dom.dom
           end
         end
