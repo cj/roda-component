@@ -49,6 +49,10 @@ class Roda
             node["data-#{key}"] = value
           end
         end
+
+        def val value
+          node.content = value
+        end
       end
 
       def html= content

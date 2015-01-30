@@ -210,7 +210,7 @@ class Roda
         dom = _options[:dom] unless dom
         key = _options[:key] if !key && _options.key?(:key)
 
-        dom.find('input, select') do |element|
+        dom.find('input, select, textarea') do |element|
           name  = element['name']
           name  = name.gsub(/\A#{key}/, '') if key
           keys  = name.gsub(/\A\[/, '').gsub(/[^a-z0-9_]/, '|').gsub(/\|\|/, '|').gsub(/\|$/, '').split('|')
@@ -238,6 +238,8 @@ class Roda
             end
           when 'input'
             element['value'] = value.to_s
+          when 'textarea'
+            element.val value.to_s
           end
         end
       end
