@@ -107,19 +107,16 @@ class Roda
         # @param [Symbol] att The attribute you wish to verify the presence of.
         # @param [Array<Symbol, Symbol>] error The error that should be returned
         #                                when the validation fails.
-        def assert_present(att, error = [att, :not_present], klass = false)
-          if error.is_a? Class
-            error_new = klass.dup
-            klass = error
-            error = error_new || [att, :not_present]
-
+        def assert_present(att, error = [att, :not_present])
+          if klass = _form[att]
             options = {}
             options[:key] = _options[:key] if _options.key? :key
 
-            f = klass.new(_attributes.send(att), options)
+            f = klass.new(send(att), options)
             assert(f.valid?, [att, f.errors])
           else
-            assert(!_attributes.send(att).to_s.empty?, error)
+            binding.pry if att.to_s == 'line1'
+            assert(!send(att).to_s.empty?, error)
           end
         end
 

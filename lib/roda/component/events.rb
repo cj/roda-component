@@ -68,7 +68,6 @@ class Roda
               evt.prevent_default
 
               params = {}
-              el.find('.field-error').remove
 
               # loop through all the forum values
               el.serialize_array.each do |row|
@@ -96,6 +95,8 @@ class Roda
               else
                 form = form_klass.new params_obj, opts
               end
+
+              el.find(opts[:error_selector] || '.field-error').remove
 
               Component::Instance.new(component(comp), scope).instance_exec form, evt.current_target, evt, &block
             end

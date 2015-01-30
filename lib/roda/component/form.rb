@@ -10,8 +10,10 @@ class Roda
           @_attributes = []
 
           atts.each do |key, val|
-            send(:"#{key}=", val)
-            @_attributes << key
+            if respond_to?("#{key}=")
+              send(:"#{key}=", val)
+              @_attributes << key
+            end
           end
         end
 
@@ -67,17 +69,38 @@ class Roda
       #   post = Post.new(edit.attributes)
       #   post.save
       def initialize(atts, options = {})
+        @_data    = atts
+        @_data    = atts.to_obj if atts.is_a? Hash
         @_options = options
 
         # @_attributes = Class.new(Attributes).new
         @_attributes = Attributes.new
         @_attributes.set_attr_accessors _attr_accessors
-        @_attributes.set_values atts
+        @_attributes.set_values _data
+
+        _form.each do |key, klass|
+          opts = {}
+          opts[key] = _data.send(key) if _data.respond_to?(key)
+          @_attributes.set_values opts
+        end
       end
 
       def self.attr_accessor(*vars)
         @_attr_accessors ||= []
-        @_attr_accessors.concat vars
+        @_form ||= {}
+
+        vars.each do |v|
+          if !v.is_a? Hash
+            @_attr_accessors << v unless @_attr_accessors.include? v
+          else
+            v = v.first
+
+            unless @_attr_accessors.include? v.first
+              @_attr_accessors << v.first
+              @_form[v.first] = v.last
+            end
+          end
+        end
       end
 
       def method_missing method, *args, &block
@@ -94,7 +117,7 @@ class Roda
         Hash.new.tap do |atts|
           _attributes.instance_variables.each do |ivar|
             # todo: figure out why it's setting @constructor and @toString
-            next if ivar == :@constructor || ivar == :@toString || ivar == :@_attributes
+            next if ivar == :@constructor || ivar == :@toString || ivar == :@_attributes || ivar == :@_data || ivar == :@_forms
 
             att = ivar[1..-1].to_sym
             atts[att] = _attributes.send(att)
@@ -155,25 +178,35 @@ class Roda
       def render_values dom = false, key = false, data = false
         dom = _options[:dom] unless dom
         key = _options[:key] if !key && _options.key?(:key)
-        data = attributes unless data
 
-        data.each do |k, v|
-          k = "#{key}[#{k}]" if !key.nil?
-          if v.is_a?(Hash)
-            render_values dom, k, v
-          else
-            dom.find('input, select') do |element|
-              if element['name'] == k
-                case element.name
-                when 'select'
-                  element.find('option').each do |x|
-                    x['selected'] = true if x['value']==v.to_s
-                  end
-                when 'input'
-                  element['value'] = v.to_s
-                end
+        dom.find('input, select') do |element|
+          name  = element['name']
+          name  = name.gsub(/\A#{key}/, '') if key
+          keys  = name.gsub(/\A\[/, '').gsub(/[^a-z0-9_]/, '|').gsub(/\|\|/, '|').gsub(/\|$/, '').split('|')
+          value = false
+
+          keys.each do |k|
+            begin
+              value = value ? value.send(k) : send(k)
+
+              if klass = _form[k.to_s.to_sym]
+                options = {}
+                options[:key] = _options[:key] if _options.key? :key
+
+                value = klass.new(value, options)
               end
+            rescue
+              value = ''
             end
+          end
+
+          case element.name
+          when 'select'
+            element.find('option') do |x|
+              x['selected'] = true if x['value'] == value.to_s
+            end
+          when 'input'
+            element['value'] = value.to_s
           end
         end
       end
@@ -184,8 +217,20 @@ class Roda
         @_attr_accessors
       end
 
+      def self._form
+        @_form
+      end
+
       def _attributes
         @_attributes ||= []
+      end
+
+      def _form
+        self.class._form
+      end
+
+      def _data
+        @_data ||= []
       end
 
       def _attr_accessors
