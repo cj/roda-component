@@ -176,7 +176,7 @@ class Roda
 
           error = error.first
 
-          if error.is_a? Hash
+          if error.is_a?(Hash)
             d_options = options.dup
             d_options[:keys] = d_keys
             d_options[:override_errors] = d_errors[key].first
@@ -187,7 +187,16 @@ class Roda
               i != 0 ? "[#{field}]" : field
             end.join
 
-            field_error_dom = DOM.new(`#{options[:tmpl].dom}[0].outerHTML` || '<span class="field-error"><span>')
+            if tmpl = options[:tmpl]
+              if client?
+                field_error_dom = DOM.new(`#{tmpl.dom}[0].outerHTML`)
+              else
+                field_error_dom = DOM.new(tmpl.dom.to_html)
+              end
+            else
+              field_error_dom = DOM.new('<span class="field-error"><span>')
+            end
+
             field_error_dom.html _error_name(key, error)
 
             field = dom.find("[name='#{name}']")
@@ -268,7 +277,7 @@ class Roda
       end
 
       def _error_name key, error
-        case error.to_sym
+        case error.to_s.to_sym
         when :not_email
           'Email Isn\'t Valid.'
         when :not_present
@@ -283,6 +292,16 @@ class Roda
       def empty?
         _attributes.empty?
       end
+
+      def server? &block
+        RUBY_ENGINE == 'ruby'
+      end
+      alias :server :server?
+
+      def client?
+        RUBY_ENGINE == 'opal'
+      end
+      alias :client :client?
     end
   end
 end

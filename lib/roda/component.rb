@@ -1,5 +1,6 @@
 require 'opal'
 require 'opal-jquery'
+require 'ostruct'
 
 unless RUBY_ENGINE == 'opal'
   require 'tilt'
@@ -126,7 +127,9 @@ class Roda
                   Element.find('meta[name=_csrf]').attr 'content', csrf
                   ###########################
 
-                  blk.call Native(response.body), response
+                  res = JSON.from_object(`response`)
+
+                  blk.call res[:body], res
               end
 
               # Element['body'].on event_id do |event, local, data|
@@ -399,6 +402,22 @@ class Roda
       end
 
       value
+    end
+
+    # Recursively process the request params and convert
+    # hashes to support indifferent access, leaving
+    # other values alone.
+    def indifferent_params(params)
+      case params
+      when Hash
+        hash = Hash.new{|h, k| h[k.to_s] if Symbol === k}
+        params.each{|k, v| hash[k] = indifferent_params(v)}
+        hash
+      when Array
+        params.map{|x| indifferent_params(x)}
+      else
+        params
+      end
     end
 
     private
