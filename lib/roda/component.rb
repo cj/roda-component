@@ -4,6 +4,41 @@ require 'ostruct'
 
 unless RUBY_ENGINE == 'opal'
   require 'tilt'
+  require 'nokogiri'
+
+
+  module Nokogiri
+    module XML
+      class Node
+
+        private
+
+        def coerce data # :nodoc:
+          if data.class.to_s == 'Roda::Component::DOM'
+            data = data.dom
+          end
+
+          case data
+          when XML::NodeSet
+            return data
+          when XML::DocumentFragment
+            return data.children
+          when String
+            return fragment(data).children
+          when Document, XML::Attr
+            # unacceptable
+          when XML::Node
+            return data
+          end
+
+          raise ArgumentError, <<-EOERR
+  Requires a Node, NodeSet or String argument, and cannot accept a #{data.class}.
+  (You probably want to select a node from the Document with at() or search(), or create a new Node via Node.new().)
+          EOERR
+        end
+      end
+    end
+  end
 end
 
 require "base64"
@@ -421,6 +456,18 @@ class Roda
     end
 
     private
+
+    def from_server?
+      if request
+        !request.env.include?('HTTP_X_RODA_COMPONENT_ON_SERVER')
+      else
+        false
+      end
+    end
+
+    def from_client?
+      !from_server?
+    end
 
     def server?
       RUBY_ENGINE == 'ruby'

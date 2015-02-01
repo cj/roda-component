@@ -96,13 +96,12 @@ class Roda
             end
           EOF
 
-          loaded_component_js << ("<script>#{Opal.compile(js)}</script>")
-
           file_path = comp.class.instance_methods(false).map { |m|
               comp.class.instance_method(m).source_location.first
           }.uniq.first.gsub("#{Dir.pwd}/#{component_opts[:path]}", '').gsub(/\.rb\Z/, '.js')
 
           loaded_component_js << "<script type=\"text/javascript\" src=\"/#{component_opts[:assets_route]}#{file_path}\"></script>"
+          loaded_component_js << ("<script>#{Opal.compile(js)}</script>")
         end
 
         def component name, options = {}, &block

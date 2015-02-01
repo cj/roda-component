@@ -129,9 +129,14 @@ class Roda
       end
 
       def method_missing method, *args, &block
-        return if method[/\=\z/]
+        # respond_to?(symbol, include_all=false)
+        if _data.respond_to? method, true
+          _data.send method, *args, &block
+        else
+          return if method[/\=\z/]
 
-        super
+          super
+        end
       end
 
       # Return hash of attributes and values.
