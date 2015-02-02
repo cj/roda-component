@@ -50,6 +50,25 @@ class Roda
       #          :date  => [:format] }
       #
       module Validations
+        def server? &block
+          RUBY_ENGINE == 'ruby'
+        end
+        alias :server :server?
+
+        def client?
+          RUBY_ENGINE == 'opal'
+        end
+        alias :client :client?
+
+        def self.server? &block
+          RUBY_ENGINE == 'ruby'
+        end
+        alias :server :server?
+
+        def self.client?
+          RUBY_ENGINE == 'opal'
+        end
+        alias :client :client?
 
         # Check if the current model state is valid. Each call to {#valid?} will
         # reset the {#errors} array.
@@ -127,11 +146,19 @@ class Roda
         #                                when the validation fails.
         def assert_numeric(att, error = [att, :not_numeric])
           if assert_present(att, error)
-            assert_format(att, /\A\-?\d+\z/, error)
+            if client?
+              assert_format(att, /^\-?\d+$/, error)
+            else
+              assert_format(att, /\A\-?\d+\z/, error)
+            end
           end
         end
 
-        URL = /\A(http|https):\/\/([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}|(2 5[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3} |localhost)(:[0-9]{1,5})?(\/.*)?\z/i
+        if client?
+          URL = /^(http|https):\/\/([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}|(2 5[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3} |localhost)(:[0-9]{1,5})?(\/.*)?$/i
+        else
+          URL = /\A(http|https):\/\/([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}|(2 5[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3} |localhost)(:[0-9]{1,5})?(\/.*)?\z/i
+        end
 
         def assert_url(att, error = [att, :not_url])
           if assert_present(att, error)
@@ -139,7 +166,11 @@ class Roda
           end
         end
 
-        EMAIL = /^[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$/i
+        if client?
+          EMAIL = /^[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$/i
+        else
+          EMAIL = /\A[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]\z/i
+        end
 
         def assert_email(att, error = [att, :not_email])
           if assert_present(att, error)
@@ -158,7 +189,11 @@ class Roda
           end
         end
 
-        DECIMAL = /\A\-?(\d+)?(\.\d+)?\z/
+        if client?
+          DECIMAL = /^\-?(\d+)?(\.\d+)?$/
+        else
+          DECIMAL = /\A\-?(\d+)?(\.\d+)?\z/
+        end
 
         def assert_decimal(att, error = [att, :not_decimal])
           assert_format att, DECIMAL, error

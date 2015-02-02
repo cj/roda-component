@@ -325,6 +325,16 @@ class Roda
         RUBY_ENGINE == 'opal'
       end
       alias :client :client?
+
+      def self.server? &block
+        RUBY_ENGINE == 'ruby'
+      end
+      alias :server :server?
+
+      def self.client?
+        RUBY_ENGINE == 'opal'
+      end
+      alias :client :client?
     end
   end
 end
