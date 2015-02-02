@@ -6,6 +6,27 @@ unless RUBY_ENGINE == 'opal'
   require 'tilt'
   require 'nokogiri'
 
+  # this is to fix `.maps` not using correct url.
+  module Opal
+    class Processor < Tilt::Template
+      def evaluate(context, locals, &block)
+        return Opal.compile data unless context.is_a? ::Sprockets::Context
+
+        path = context.logical_path
+        prerequired = []
+
+        builder = self.class.new_builder(context)
+        result = builder.build_str(data, path, :prerequired => prerequired)
+
+        if self.class.source_map_enabled
+          register_source_map(context.logical_path, result.source_map.to_s)
+          "#{result.to_s}\n//# sourceMappingURL=/#{Roda::Component.app.component_opts[:assets_route]}/#{context.logical_path}.map\n"
+        else
+          result.to_s
+        end
+      end
+    end
+  end
 
   module Nokogiri
     module XML

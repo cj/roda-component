@@ -81,26 +81,28 @@ class Roda
           options   = Base64.encode64 options.to_json
           comp_name = comp.class._name
 
+          file_path = comp.class.instance_methods(false).map { |m|
+              comp.class.instance_method(m).source_location.first
+          }.uniq.first.gsub("#{Dir.pwd}/#{component_opts[:path]}", '').gsub(/\.rb\Z/, '.js')
+
           js = <<-EOF
             unless $faye
               $faye = Roda::Component::Faye.new('/faye')
             end
 
             unless $component_opts[:comp][:"#{comp_name}"]
-              Document.ready? do
-                c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
-                c.instance_variable_set(:@_cache, JSON.parse(Base64.decode64('#{cache}')))
-                c.events.trigger_jquery_events
-                c.#{action}(JSON.parse(Base64.decode64('#{options}')))
-              end
+              $component_opts[:comp][:"#{comp_name}"] = true
+              `$.getScript("/#{component_opts[:assets_route]}#{file_path}", function(){`
+                Document.ready? do
+                  c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
+                  c.instance_variable_set(:@_cache, JSON.parse(Base64.decode64('#{cache}')))
+                  c.events.trigger_jquery_events
+                  c.#{action}(JSON.parse(Base64.decode64('#{options}')))
+                end
+              `});`
             end
           EOF
 
-          file_path = comp.class.instance_methods(false).map { |m|
-              comp.class.instance_method(m).source_location.first
-          }.uniq.first.gsub("#{Dir.pwd}/#{component_opts[:path]}", '').gsub(/\.rb\Z/, '.js')
-
-          loaded_component_js << "<script type=\"text/javascript\" src=\"/#{component_opts[:assets_route]}#{file_path}\"></script>"
           loaded_component_js << ("<script>#{Opal.compile(js)}</script>")
         end
 
@@ -194,11 +196,15 @@ class Roda
           opal = Opal::Server.new do |s|
             # Append the gems path
             if scope.component_opts[:debug]
-              s.debug = true
+              s.debug      = true
               s.source_map = true
             else
               s.source_map = false
             end
+
+            # we are loading the source maps ourselves
+
+            s.prefix = "/#{scope.component_opts[:assets_route]}"
 
             s.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
 
@@ -217,7 +223,6 @@ class Roda
               if path[/\.rb\Z/] && js_file = scope.request.env['PATH_INFO'].scan(/(.*\.map)/)
                 scope.request.env['PATH_INFO'] = path.gsub(js_file.last.first, '').gsub("/#{scope.component_opts[:assets_route]}", '')
               end
-
               run Opal::SourceMapServer.new(opal.sprockets, path)
             end
           end
