@@ -91,6 +91,7 @@ class Roda
             end
 
             unless $component_opts[:comp][:"#{comp_name}"]
+              $component_opts[:faye] ||= {}
               $component_opts[:comp][:"#{comp_name}"] = true
               `$.getScript("/#{component_opts[:assets_route]}#{file_path}", function(){`
                 Document.ready? do

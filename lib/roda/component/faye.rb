@@ -128,11 +128,12 @@ else
 
             case message['channel']
             when '/meta/connect'
+              callback.call message
+
               if session_id
                 redis.call 'HSET', "#{key}/ids", private_id, public_id
                 # puts redis.call 'HGETALL', "#{key}/ids"
               end
-              callback.call message
             when '/meta/disconnect'
               callback.call message
 
@@ -203,8 +204,25 @@ else
             data = app.roda_component(:"#{component_name}", { trigger: (joining ? :join : :leave), public_id: public_id, private_id: private_id })
 
             url = "http#{request.env['SERVER_PORT'] == '443' ? 's' : ''}://#{request.env['SERVER_NAME']}:#{request.env['SERVER_PORT']}/faye"
-            client = ::Faye::Client.new(url)
-            client.publish "/components/#{component_name}", type: (joining ? 'join' : 'leave'), public_id: public_id, token: app.component_opts[:token], local: data
+            # client = ::Faye::Client.new(url)
+            # client.publish "/components/#{component_name}", type: (joining ? 'join' : 'leave'), public_id: public_id, token: app.component_opts[:token], local: data
+            # EM.run {
+              http = EM::HttpRequest.new(url).post(
+                head: {
+                 'content-type' => 'application/json'
+                },
+                body: {
+                  channel: "/components/#{component_name}",
+                  data: {
+                    type: (joining ? 'join' : 'leave'), public_id: public_id, token: app.component_opts[:token], local: data }
+                  }.to_json
+              )
+              # http.callback {
+              #   ap http.response_header.status
+              #   ap http.response_header
+              #   ap http.response
+              # }
+            # }
           end
 
           # /components/:id/:comp/:action

@@ -110,7 +110,9 @@ class Roda
     def initialize(scope = false)
       @scope   = scope
 
-      if client?
+      if client? && !$component_opts[:faye][:"#{self.class._name}"]
+        $component_opts[:faye][:"#{self.class._name}"] = true
+
         $faye.subscribe "/components/#{self.class._name}" do |msg|
           msg = Native(msg)
 
