@@ -376,6 +376,41 @@ class Roda
       end
     end
 
+    if RUBY_ENGINE == 'opal'
+      def component name, options = {}, &block
+        comp = load_component name
+
+        action  = options.delete(:call)    || :display
+        trigger = options.delete(:trigger) || false
+        js      = options.delete(:js)
+        args    = options.delete(:args)
+
+        # call action
+        # TODO: make sure the single method parameter isn't a block
+        if trigger
+          if args
+            comp_response = comp.trigger trigger, *args
+          else
+            comp_response = comp.trigger trigger, options
+          end
+        else
+          # We want to make sure it's not a method that already exists in ruba
+          # otherwise that would give us a false positive.
+          if comp.methods.include? action
+            comp_response = comp.send(action, options, &block)
+          else
+            fail "##{action} doesn't exist for #{comp.class}"
+          end
+        end
+
+        comp_response
+      end
+    end
+
+    def load_component name
+      component_opts[:class_name][name].split('::').inject(Object) {|o,c| o.const_get(c)}.new self
+    end
+
     def render_fields data, options = {}
       data = data.is_a?(Hash) ? data.to_obj : data
 

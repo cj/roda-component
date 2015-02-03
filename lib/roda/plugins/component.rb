@@ -77,9 +77,10 @@ class Roda
           cache.delete :dom
           cache.delete :cache
 
-          cache     = Base64.encode64 cache.to_json
-          options   = Base64.encode64 options.to_json
-          comp_name = comp.class._name
+          cache      = Base64.encode64 cache.to_json
+          options    = Base64.encode64 options.to_json
+          comp_name  = comp.class._name
+          class_name = Base64.encode64 component_opts[:class_name].to_json
 
           file_path = comp.class.instance_methods(false).map { |m|
               comp.class.instance_method(m).source_location.first
@@ -88,6 +89,10 @@ class Roda
           js = <<-EOF
             unless $faye
               $faye = Roda::Component::Faye.new('/faye')
+            end
+
+            unless $component_opts[:class_name]
+              $component_opts[:class_name] = JSON.parse(Base64.decode64('#{class_name}'))
             end
 
             unless $component_opts[:comp][:"#{comp_name}"]
