@@ -62,9 +62,8 @@ class Roda
           when 'form'
             warn 'missing form class option' unless form_klass
 
-            el = Element.find(selector)
-
-            el.on :submit do |evt|
+            Document.on :submit, selector do |evt|
+              el = evt.current_target
               evt.prevent_default
 
               params = {}

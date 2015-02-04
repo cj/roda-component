@@ -178,7 +178,8 @@ class Roda
       def slice(*keys)
         Hash.new.tap do |atts|
           keys.each do |att|
-            atts[att] = _attributes.send(att)
+            atts[att] = send(att)
+            # atts[att] = _attributes.send(att)
           end
         end
       end
@@ -276,11 +277,11 @@ class Roda
       end
 
       def self._attr_accessors
-        @_attr_accessors
+        @_attr_accessors ||= []
       end
 
       def self._form
-        @_form
+        @_form || {}
       end
 
       def _form

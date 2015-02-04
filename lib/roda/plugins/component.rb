@@ -115,10 +115,10 @@ class Roda
         def component name, options = {}, &block
           comp = load_component name
 
-          action  = options.delete(:call)    || :display
-          trigger = options.delete(:trigger) || false
-          js      = options.delete(:js)
-          args    = options.delete(:args)
+          action        = options.delete(:call)    || :display
+          trigger       = options.delete(:trigger) || false
+          js            = options.delete(:js)
+          args          = options.delete(:args)
 
           # call action
           # TODO: make sure the single method parameter isn't a block
@@ -213,6 +213,7 @@ class Roda
             s.prefix = "/#{scope.component_opts[:assets_route]}"
 
             s.append_path Gem::Specification.find_by_name("roda-component").gem_dir + '/lib'
+            s.append_path Gem::Specification.find_by_name("ability_list").gem_dir + '/lib'
 
             # Append the path to the components folder
             s.append_path scope.component_opts[:path]
