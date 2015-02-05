@@ -235,11 +235,8 @@ class Roda
           end
 
           on self.class.component_route_regex do |comp, type, action|
-            if scope.request.env.include? 'HTTP_X_RODA_COMPONENT_ON_SERVER'
-              data = JSON.parse scope.request.body.read
-            else
-              data = {}
-            end
+            body = scope.request.body.read
+            data = body ? JSON.parse(body) : {}
 
             if data.is_a? Array
               data = {args: data}
