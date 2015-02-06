@@ -368,6 +368,24 @@ class Roda
       events.trigger(*args)
     end
 
+    def function *args, &block
+      args.any? && raise(ArgumentError, '`function` does not accept arguments')
+      block || raise(ArgumentError, 'block required')
+      proc do |*a|
+        a.map! {|x| Native(`x`)}
+        @this = Native(`this`)
+        %x{
+         var bs = block.$$s,
+            result;
+          block.$$s = null;
+          result = block.apply(self, a);
+          block.$$s = bs;
+          
+          return result;
+        }
+      end
+    end
+
     def method_missing method, *args, &block
       if server? && scope.respond_to?(method, true)
         scope.send method, *args, &block
