@@ -63,13 +63,15 @@ class Roda
           request.env['loaded_component_js'] ||= []
         end
 
-        def load_component name
-          Object.const_get(
+        def load_component name, options = {}
+          c = Object.const_get(
             component_opts[:class_name][name.to_s]
-          ).new self
+          )
+
+          c.new self, options
         end
 
-        def load_component_js comp, action = :display, options = {}
+        def load_component_js comp, action = false, options = {}
           # grab a copy of the cache
           cache = comp.class.cache.dup
           # remove html and dom cache as we don't need that for the client
@@ -87,6 +89,8 @@ class Roda
           }.uniq.first.gsub("#{Dir.pwd}/#{component_opts[:path]}", '').gsub(/\.rb\Z/, '.js')
 
           js = <<-EOF
+            action = '#{action || 'false'}'
+
             unless $faye
               $faye = Roda::Component::Faye.new('/faye')
             end
@@ -100,10 +104,14 @@ class Roda
               $component_opts[:comp][:"#{comp_name}"] = true
               `$.getScript("/#{component_opts[:assets_route]}#{file_path}", function(){`
                 Document.ready? do
-                  c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
+                  if action != 'false'
+                    c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
+                  else
+                    c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new(JSON.parse(Base64.decode64('#{options}')))
+                  end
                   c.instance_variable_set(:@_cache, JSON.parse(Base64.decode64('#{cache}')))
                   c.events.trigger_jquery_events
-                  c.#{action}(JSON.parse(Base64.decode64('#{options}')))
+                  c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
                 end
               `});`
             end
@@ -113,12 +121,14 @@ class Roda
         end
 
         def component name, options = {}, &block
-          comp = load_component name
-
-          action        = options.delete(:call)    || :display
-          trigger       = options.delete(:trigger) || false
+          action        = options.delete(:call)
+          trigger       = options.delete(:trigger)
           js            = options.delete(:js)
           args          = options.delete(:args)
+
+          action = :display if js && !action
+
+          comp = load_component name, options
 
           # call action
           # TODO: make sure the single method parameter isn't a block
@@ -128,7 +138,7 @@ class Roda
             else
               comp_response = comp.trigger trigger, options
             end
-          else
+          elsif action
             # We want to make sure it's not a method that already exists in ruba
             # otherwise that would give us a false positive.
             if comp.respond_to?(action) && !"#{comp.method(action)}"[/\(Kernel\)/]
@@ -146,17 +156,21 @@ class Roda
             end
           end
 
-          load_component_js comp, action, options
+          if trigger || action
+            load_component_js comp, action, options
 
-          if js && comp_response.is_a?(Roda::Component::DOM)
-            comp_response = comp_response.to_xml
+            if js && comp_response.is_a?(Roda::Component::DOM)
+              comp_response = comp_response.to_xml
+            end
+
+            if comp_response.is_a?(String) && js
+              comp_response << component_js
+            end
+
+            comp_response
+          else
+            comp
           end
-
-          if comp_response.is_a?(String) && js
-            comp_response << component_js
-          end
-
-          comp_response
         end
         alias :comp :component
         alias :roda_component :component

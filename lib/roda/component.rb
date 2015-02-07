@@ -105,10 +105,11 @@ class Roda
   end
 
   class Component
-    attr_accessor :scope, :cache
+    def initialize(data = false)
+    end
 
-    def initialize(scope = false)
-      @scope   = scope
+    def _initialize(scope = false)
+      @_scope = scope
 
       if client? && !$component_opts[:faye][:"#{self.class._name}"]
         $component_opts[:faye][:"#{self.class._name}"] = true
@@ -135,10 +136,18 @@ class Roda
           trigger :disconnect
         end
       end
+
     end
 
     class << self
       attr_accessor :_name
+
+      def new(*args, &block)
+        obj = self.allocate
+        obj.instance_variable_set :@_scope, args.shift
+        obj.send :initialize, *args, &block
+        obj
+      end
 
       if RUBY_ENGINE == 'ruby'
         def inherited(subclass)
@@ -396,12 +405,12 @@ class Roda
 
     if RUBY_ENGINE == 'opal'
       def component name, options = {}, &block
-        comp = load_component name
-
-        action  = options.delete(:call)    || :display
-        trigger = options.delete(:trigger) || false
+        action  = options.delete(:call)
+        trigger = options.delete(:trigger)
         js      = options.delete(:js)
         args    = options.delete(:args)
+
+        comp = load_component name, options
 
         # call action
         # TODO: make sure the single method parameter isn't a block
@@ -411,7 +420,7 @@ class Roda
           else
             comp_response = comp.trigger trigger, options
           end
-        else
+        elsif action
           # We want to make sure it's not a method that already exists in ruba
           # otherwise that would give us a false positive.
           if comp.methods.include? action
@@ -421,12 +430,16 @@ class Roda
           end
         end
 
-        comp_response
+        if trigger || action
+          comp_response
+        else
+          comp
+        end
       end
     end
 
-    def load_component name
-      component_opts[:class_name][name].split('::').inject(Object) {|o,c| o.const_get(c)}.new self
+    def load_component name, options = {}
+      component_opts[:class_name][name].split('::').inject(Object) {|o,c| o.const_get(c)}.new self. options
     end
 
     def render_fields data, options = {}
@@ -531,7 +544,15 @@ class Roda
       end
     end
 
+    def render *args, &block
+      display *args, &block
+    end
+
     private
+
+    def scope
+      @_scope
+    end
 
     def from_server?
       if request
