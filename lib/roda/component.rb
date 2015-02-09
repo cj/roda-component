@@ -550,6 +550,10 @@ class Roda
 
     private
 
+    def params
+      @_params ||= (super || indifferent_params({}))
+    end
+
     def scope
       @_scope
     end
