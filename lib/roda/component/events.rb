@@ -1,12 +1,5 @@
 class Roda
   class Component
-    class ::Hash
-      def deep_merge(second)
-        merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }
-        self.merge(second, &merger)
-      end
-    end
-
     class Events < Struct.new(:klass, :component_opts, :scope, :request)
       def on name, options = {}, form_klass = false, extra_opts = false, &block
         options = '' if options.empty? && (name.to_s == 'history_change' || name.to_s == 'ready')

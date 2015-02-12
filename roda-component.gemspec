@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "redis-rack"
   spec.add_runtime_dependency "rest-client"
   spec.add_runtime_dependency "faye", '~> 1.1.0'
-  spec.add_runtime_dependency "ability_list", '~> 0.0.3'
+  spec.add_runtime_dependency "ability_list", '~> 0.0.4'
   spec.add_runtime_dependency "faye-redis"
   spec.add_runtime_dependency "redic", "~> 1.1.1"
   spec.add_development_dependency "bundler", "~> 1.7"
