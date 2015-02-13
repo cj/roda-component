@@ -87,6 +87,7 @@ end
 class Roda
   class Component
     def initialize(data = false)
+      self
     end
 
     def _initialize(scope = false)
@@ -116,6 +117,8 @@ class Roda
           $faye.online       = false
           trigger :disconnect
         end
+
+        self
       end
 
     end
@@ -421,7 +424,8 @@ class Roda
     end
 
     def load_component name, options = {}
-      component_opts[:class_name][name].split('::').inject(Object) {|o,c| o.const_get(c)}.new self, options
+      # component_opts[:comp][name] ||= component_opts[:class_name][name].split('::').inject(Object) {|o,c| o.const_get(c)}.new self, options
+      component_opts[:comp][name]
     end
 
     def render_fields data, options = {}
