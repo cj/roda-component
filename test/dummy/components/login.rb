@@ -13,7 +13,7 @@ class LoginComponent < Roda::Component
 
     session['display'] = 'login'
 
-    component(:layout, body_class: 'login') do
+    component(:layout).display body_class: 'login' do
       dom.find('body').html
     end
   end

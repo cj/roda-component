@@ -45,10 +45,10 @@ class TestApp < Roda
   plugin :csrf, header: 'X-CSRF-TOKEN', skip: ['POST:/faye']
   plugin :component, { path: 'components', token: '687^*&SAD876asd87as6d*&8asd', debug: true }
   plugin :assets, {
-    path: "#{path}/../public",
+    group_subdirs: false,
+    path: "#{Dir.pwd}/public",
     css_dir: '',
     js_dir: '',
-    group_subdirs: false,
     css: {
       chat: [
         'bower/open-sans-fontface/open-sans.css',
@@ -65,7 +65,7 @@ class TestApp < Roda
       chat: [
         'bower/jquery/dist/jquery.js',
         'bower/jScrollPane/script/jquery.mousewheel.js',
-        'chat/bower/jScrollPane/script/jquery.jscrollpane.js'
+        'bower/jScrollPane/script/jquery.jscrollpane.js'
       ],
       form: [
         'bower/jquery/dist/jquery.js',

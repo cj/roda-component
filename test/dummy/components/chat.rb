@@ -9,7 +9,7 @@ class ChatComponent < Roda::Component
 
     dom.find('.my-account .name span').html current_user.full_name
 
-    component(:layout) do
+    component(:layout).display do
       dom.find('body').html
     end
   end

@@ -5,6 +5,7 @@ require 'roda/component'
 require 'roda/component/faye'
 require 'json'
 require "base64"
+require 'ability_list'
 
 class Roda
   module RodaPlugins

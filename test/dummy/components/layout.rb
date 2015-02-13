@@ -13,7 +13,7 @@ class LayoutComp < Roda::Component
     EOF
   end
 
-  def display data, &block
+  def display data = {}, &block
     if server?
       body_class = data.delete :body_class
 

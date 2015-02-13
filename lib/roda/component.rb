@@ -69,7 +69,8 @@ require 'roda/component/dom'
 require 'roda/component/events'
 require 'roda/component/titleize'
 require 'roda/component/hash'
-require 'roda/component/object'
+require 'roda/component/object/blank'
+require 'roda/component/object/try'
 
 if RUBY_ENGINE == 'opal'
   require 'roda/component/element'
@@ -89,7 +90,7 @@ class Roda
     end
 
     def _initialize(scope = false)
-      @_scope = scope
+      @_scope = scope if scope
 
       if client? && !$component_opts[:faye][:"#{self.class._name}"]
         $component_opts[:faye][:"#{self.class._name}"] = true
@@ -126,6 +127,7 @@ class Roda
         obj = self.allocate
         obj.instance_variable_set :@_scope, args.shift
         obj.send :initialize, *args, &block
+        obj._initialize
         obj
       end
 
@@ -512,16 +514,7 @@ class Roda
     # hashes to support indifferent access, leaving
     # other values alone.
     def indifferent_params(params)
-      case params
-      when Hash
-        hash = Hash.new{|h, k| h[k.to_s] if Symbol === k}
-        params.each{|k, v| hash[k] = indifferent_params(v)}
-        hash
-      when Array
-        params.map{|x| indifferent_params(x)}
-      else
-        params
-      end
+      params.indifferent
     end
 
     def render *args, &block
