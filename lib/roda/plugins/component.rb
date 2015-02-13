@@ -103,7 +103,7 @@ class Roda
             unless $component_opts[:comp][:"#{comp_name}"]
               $component_opts[:faye] ||= {}
               $component_opts[:comp][:"#{comp_name}"] = true
-              `$.getScript("/#{component_opts[:assets_route]}#{file_path}", function(){`
+              `$.getScript("/#{component_opts[:assets_route]}#{file_path}").done(function(){`
                 Document.ready? do
                   if action != 'false'
                     c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
@@ -114,7 +114,7 @@ class Roda
                   c.events.trigger_jquery_events
                   c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
                 end
-              `});`
+              `}).fail(function(jqxhr, settings, exception){ window.console.log(exception); });`
             end
           EOF
 
