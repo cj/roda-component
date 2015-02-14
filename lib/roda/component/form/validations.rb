@@ -134,7 +134,6 @@ class Roda
             f = klass.new(send(att).attributes, options)
             assert(f.valid?, [att, f.errors])
           else
-            binding.pry if att.to_s == 'line1'
             assert(!send(att).to_s.empty?, error)
           end
         end
