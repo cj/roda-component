@@ -157,14 +157,14 @@ class Roda
 
         data.each do |k, v|
           if klass = _form[k.to_s.to_sym]
-            data = data[k]
-            data = data.attributes if data.is_a?(Form)
+            d = data[k]
+            d = d.attributes if d.is_a?(Form)
 
-            f = klass.new data
-            k = "#{k}_attributes"
-            data = f.model_attributes
+            f  = klass.new d
+            k  = "#{k}_attributes"
+            dt = f.model_attributes
 
-            hash[k] = model_attributes data
+            hash[k] = model_attributes dt
           elsif v.is_a? Hash
             hash[k] = model_attributes data[k]
           else
