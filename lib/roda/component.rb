@@ -134,6 +134,10 @@ class Roda
         obj
       end
 
+      def comp_requires
+        (@_comp_requires ||= []).uniq
+      end
+
       if RUBY_ENGINE == 'ruby'
         def inherited(subclass)
           super
@@ -233,6 +237,12 @@ class Roda
 
           cache[:dom] = DOM.new(cache[:html])
         end
+      end
+
+      def comp_require *names
+        @_comp_requires ||= []
+        names.each { |n| @_comp_requires << n}
+        @_comp_requires
       end
 
       def HTML raw_html

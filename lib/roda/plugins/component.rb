@@ -73,6 +73,12 @@ class Roda
         end
 
         def load_component_js comp, action = false, options = {}
+          if comp.is_a? Roda::Component
+            comp.class.comp_requires.each do |c|
+              load_component_js(load_component(c), false, js: true)
+            end
+          end
+
           # grab a copy of the cache
           cache = comp.class.cache.dup
           # remove html and dom cache as we don't need that for the client
