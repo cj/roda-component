@@ -166,9 +166,9 @@ class Roda
         end
 
         if client?
-          EMAIL = /^[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$/i
+          EMAIL = /^[a-z0-9!\#$%&'*\/=\?^{|}+_-]+(?:\.[a-z0-9!\#$%&'*\/=\?^{|}+_-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i
         else
-          EMAIL = /\A[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]\z/i
+          EMAIL = /\A[a-z0-9!\#$%&'*\/=\?^{|}+_-]+(?:\.[a-z0-9!\#$%&'*\/=\?^{|}+_-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\z/i
         end
 
         def assert_email(att, error = [att, :not_email])
@@ -203,9 +203,9 @@ class Roda
         # to make the case equality work, the check inverts the order of
         # the arguments: `assert_equal :foo, Bar` is translated to the
         # expression `Bar === send(:foo)`.
-        # 
+        #
         # @example
-        # 
+        #
         #   def validate
         #     assert_equal :status, "pending"
         #     assert_equal :quantity, Fixnum
