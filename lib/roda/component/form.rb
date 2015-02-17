@@ -259,7 +259,15 @@ class Roda
               x['selected'] = true if x['value'] == value.to_s
             end
           when 'input'
-            element['value'] = value.to_s
+            if element['type']=='radio'
+              if element['value'] == value.to_s
+                element['checked'] = true
+              else
+                element.delete 'checked'
+              end
+            else
+              element['value'] = value.to_s
+            end
           when 'textarea'
             element.val value.to_s
           end
