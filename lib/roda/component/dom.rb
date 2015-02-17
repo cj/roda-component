@@ -21,14 +21,14 @@ class Roda
         if client?
           node = DOM.new dom.find(string)
         elsif server?
-          if block
+          if block_given?
             node = DOM.new dom.css(string)
           else
             node = DOM.new dom.at(string)
           end
         end
 
-        if block
+        if block_given?
           node.each do |n|
             block.call DOM.new n
           end
@@ -37,7 +37,7 @@ class Roda
         node
       end
 
-      unless RUBY_ENGINE == 'opal'
+      if RUBY_ENGINE == 'ruby'
         def data key = false, value = false
           d = Hash[node.xpath("@*[starts-with(name(), 'data-')]").map{|a| [a.name, a.value]}]
 
@@ -53,6 +53,26 @@ class Roda
         def val value
           node.content = value
         end
+
+        def add_class classes
+          classes = (classes || '').split ' ' unless classes.is_a? Array
+          new_classes =  ((node.attr('class') || '').split(' ') << classes).uniq.join(' ')
+          node['class'] = new_classes
+        end
+
+        def remove_class classes
+          classes = (classes || '').split ' ' unless classes.is_a? Array
+          (node.attr('class') || '').split(' ').reject { |n| n =~ /active|asc|desc/i }.join(' ')
+        end
+
+        def attr key, value = false
+          if value
+            value = value.join ' ' if value.is_a? Array
+            node[key] = value
+          else
+            super key
+          end
+        end
       end
 
       def html= content
@@ -67,19 +87,13 @@ class Roda
       end
 
       if RUBY_ENGINE == 'opal'
-        def append obj
-          obj = obj.dom if obj.is_a? Roda::Component::DOM
-          super obj
-        end
-
-        def prepend obj
-          obj = obj.dom if obj.is_a? Roda::Component::DOM
-          super obj
-        end
-
-        def replace_with obj
-          obj = obj.dom if obj.is_a? Roda::Component::DOM
-          super obj
+        # make it supply the jquery element so it will use that as it doesn't
+        # know how to handle the DOM element.
+        %w(append prepend replace_with after).each do |meth|
+          define_method meth do |obj|
+            obj = obj.dom if obj.is_a? Roda::Component::DOM
+            super obj
+          end
         end
       end
 
