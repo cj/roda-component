@@ -126,10 +126,25 @@ class Roda
     class << self
       attr_accessor :_name
 
+      def file_location
+        @_file_location
+      end
+
       def new(*args, &block)
         obj = self.allocate
         obj.instance_variable_set :@_scope, args.shift
-        obj.send :initialize, *args, &block
+
+        # don't send any args if none are wanted
+        if server?
+          if obj.method(:initialize).parameters.length > 0
+            obj.send :initialize, *args, &block
+          else
+            obj.send :initialize, &block
+          end
+        else
+          obj.send :initialize, *args, &block
+        end
+
         obj._initialize
         obj
       end
@@ -218,6 +233,7 @@ class Roda
         @_name = _name.to_s
 
         if server?
+          @_file_location = caller.first.split(':').first
           component_opts[:class_name][@_name] = self.to_s
         end
       end

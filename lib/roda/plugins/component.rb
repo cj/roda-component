@@ -91,9 +91,7 @@ class Roda
           comp_name  = comp.class._name
           class_name = Base64.encode64 component_opts[:class_name].to_json
 
-          file_path = comp.class.instance_methods(false).map { |m|
-              comp.class.instance_method(m).source_location.first
-          }.uniq.first.gsub("#{Dir.pwd}/#{component_opts[:path]}", '').gsub(/\.rb\Z/, '.js')
+          file_path = comp.class.file_location.gsub("#{Dir.pwd}/#{component_opts[:path]}", '').gsub(/\.rb\Z/, '.js')
 
           js = <<-EOF
             action = '#{action || 'false'}'
