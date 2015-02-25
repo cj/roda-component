@@ -104,21 +104,34 @@ class Roda
               $component_opts[:class_name] = JSON.parse(Base64.decode64('#{class_name}'))
             end
 
-            unless $component_opts[:comp][:"#{comp_name}"]
+            if !$component_opts[:comp][:"#{comp_name}"]
               $component_opts[:faye] ||= {}
-              $component_opts[:comp][:"#{comp_name}"] = true
+              $component_opts[:comp][:"#{comp_name}"] = {cache: {}}
               `$.getScript("/#{component_opts[:assets_route]}#{file_path}").done(function(){`
+                if action != 'false'
+                  c = $component_opts[:comp][:"#{comp_name}"][:class] = #{comp.class}.new
+                else
+                  c = $component_opts[:comp][:"#{comp_name}"][:class] = #{comp.class}.new(JSON.parse(Base64.decode64('#{options}')))
+                end
+                c.instance_variable_set(:@_cache, ($component_opts[:comp][:"#{comp_name}"][:cache] = JSON.parse(Base64.decode64('#{cache}'))))
+
                 Document.ready? do
-                  if action != 'false'
-                    c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new
-                  else
-                    c = $component_opts[:comp][:"#{comp_name}"] = #{comp.class}.new(JSON.parse(Base64.decode64('#{options}')))
-                  end
-                  c.instance_variable_set(:@_cache, JSON.parse(Base64.decode64('#{cache}')))
                   c.events.trigger_jquery_events
                   c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
                 end
+
+                Document.on 'page:load' do
+                  c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
+                end
               `}).fail(function(jqxhr, settings, exception){ window.console.log(exception); });`
+            elsif $component_opts[:comp][:"#{comp_name}"] && $component_opts[:comp][:"#{comp_name}"][:class]
+              if action != 'false'
+                c = $component_opts[:comp][:"#{comp_name}"][:class] = #{comp.class}.new
+              else
+                c = $component_opts[:comp][:"#{comp_name}"][:class] = #{comp.class}.new(JSON.parse(Base64.decode64('#{options}')))
+              end
+              c.instance_variable_set(:@_cache, $component_opts[:comp][:"#{comp_name}"][:cache])
+              c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
             end
           EOF
 

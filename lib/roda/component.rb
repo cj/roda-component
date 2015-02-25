@@ -451,7 +451,7 @@ class Roda
 
     def load_component name, options = {}
       # component_opts[:comp][name] ||= component_opts[:class_name][name].split('::').inject(Object) {|o,c| o.const_get(c)}.new self, options
-      component_opts[:comp][name]
+      component_opts[:comp][name][:class]
     end
 
     def render_fields data, options = {}

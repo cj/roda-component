@@ -136,9 +136,9 @@ class Roda
 
       def component comp
         if server?
-          Object.const_get(component_opts[:class_name][comp]).new scope
+          Object.const_get(component_opts[:class_name][comp][:class]).new scope
         else
-          component_opts[:comp][comp]
+          component_opts[:comp][comp][:class]
         end
       end
 
