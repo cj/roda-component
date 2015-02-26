@@ -170,11 +170,15 @@ class Roda
           m.public_instance_methods(false).each do |meth|
             alias_method :"original_#{meth}", :"#{meth}"
             define_method "#{meth}" do |*args, &blk|
-              if blk
-                blk.call send("original_#{meth}", *args)
+              o_name = "original_#{meth}"
+
+              if method(o_name).parameters.length > 0
+                result = send(o_name, *args, &block)
               else
-                send("original_#{meth}", *args)
+                result = send(o_name, &block)
               end
+
+              blk ? blk.call(result) : result
             end
           end
         else
@@ -239,7 +243,7 @@ class Roda
       end
 
       # The html source
-      def comp_html _html, &block
+      def comp_html _html = false, &block
         if server?
           if _html.is_a? String
             if _html[%r{\A./}]
