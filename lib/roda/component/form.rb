@@ -278,6 +278,10 @@ class Roda
         @_attributes ||= {}
       end
 
+      def validate_msg error, column
+        false
+      end
+
       protected
 
       def _data
@@ -309,7 +313,7 @@ class Roda
       end
 
       def _error_name key, error
-        case error.to_s.to_sym
+        validate_msg(error.to_sym, key.to_sym) || case error.to_s.to_sym
         when :not_email
           'Email Isn\'t Valid.'
         when :not_present
@@ -317,7 +321,7 @@ class Roda
         when :not_equal
           'Password does not match.'
         else
-          error
+          !error[/\s/] ? error.to_s.gsub(/_/, ' ').titleize : error
         end
       end
 

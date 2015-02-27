@@ -127,14 +127,18 @@ class Roda
         # @param [Array<Symbol, Symbol>] error The error that should be returned
         #                                when the validation fails.
         def assert_present(att, error = [att, :not_present])
-          if klass = _form[att]
-            options = {}
-            options[:key] = _options[:key] if _options.key? :key
-
-            f = klass.new(send(att).attributes, options)
-            assert(f.valid?, [att, f.errors])
+          if att.is_a? Array
+            att.each { |a| assert_present(a, error = [a, :not_present])}
           else
-            assert(!send(att).to_s.empty?, error)
+            if klass = _form[att]
+              options = {}
+              options[:key] = _options[:key] if _options.key? :key
+
+              f = klass.new(_attributes.send(att).attributes, options)
+              assert(f.valid?, [att, f.errors])
+            else
+              assert(!_attributes.send(att).to_s.empty?, error)
+            end
           end
         end
 
