@@ -266,6 +266,8 @@ class Roda
       end
 
       def HTML raw_html
+        raw_html = raw_html.strip
+
         if raw_html[/\A<!DOCTYPE/] || raw_html[/\A<html/]
           Nokogiri::HTML(raw_html)
         else

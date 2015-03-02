@@ -266,6 +266,7 @@ class Roda
                 element.delete 'checked'
               end
             else
+              value = sprintf('%.2f', value) if value.is_a? BigDecimal
               element['value'] = value.to_s
             end
           when 'textarea'

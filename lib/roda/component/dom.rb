@@ -29,8 +29,8 @@ class Roda
         end
 
         if block_given?
-          node.each do |n|
-            block.call DOM.new n
+          node.each_with_index do |n, i|
+            block.call DOM.new(n), i
           end
         end
 
