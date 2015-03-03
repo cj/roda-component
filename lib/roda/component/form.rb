@@ -184,7 +184,7 @@ class Roda
         end
       end
 
-      def display_errors options = {}
+      def display_errors options = {}, &block
         dom = options.delete(:dom) || _dom
         d_errors = errors
 
@@ -210,7 +210,9 @@ class Roda
             d_options[:keys] = d_keys
             d_options[:override_errors] = d_errors[key].first
 
-            display_errors d_options
+            display_errors d_options, &block
+          elsif block_given?
+            block.call(d_keys, error)
           else
             name = d_keys.each_with_index.map do |field, i|
               i != 0 ? "[#{field}]" : field
