@@ -453,6 +453,8 @@ class Roda
           comp
         end
       end
+      alias_method :comp, :component
+      alias_method :roda_component, :component
     end
 
     def load_component name, options = {}

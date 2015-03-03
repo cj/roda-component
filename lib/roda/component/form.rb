@@ -148,6 +148,10 @@ class Roda
 
             att = ivar[1..-1].to_sym
             atts[att] = _attributes.send(att)
+
+            if klass = _form[att.to_s.to_sym]
+              atts[att] = klass.new(atts[att]).attributes
+            end
           end
         end
       end
