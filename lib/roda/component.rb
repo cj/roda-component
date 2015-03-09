@@ -124,7 +124,7 @@ class Roda
     end
 
     class << self
-      attr_accessor :_name
+      attr_accessor :_name, :_on_server_methods
 
       def file_location
         @_file_location
@@ -162,12 +162,16 @@ class Roda
       end
 
       def on_server &block
+        @_on_server_methods ||= []
+
         if server?
           m = Module.new(&block)
 
           yield
 
           m.public_instance_methods(false).each do |meth|
+            @_on_server_methods << meth.to_s
+
             alias_method :"original_#{meth}", :"#{meth}"
             define_method "#{meth}" do |*args, &blk|
               o_name = "original_#{meth}"
@@ -185,6 +189,8 @@ class Roda
           m = Module.new(&block)
 
           m.public_instance_methods(false).each do |meth|
+            @_on_server_methods << meth.to_s
+
             define_method "#{meth}" do |*args, &blk|
               name     = self.class._name
               # event_id = "comp-event-#{$faye.generate_id}"

@@ -117,11 +117,11 @@ class Roda
 
                 Document.ready? do
                   c.events.trigger_jquery_events
-                  c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
+                  c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if !(c.class._on_server_methods || []).include?('#{action}') && action != 'false'
                 end
 
                 Document.on 'page:load' do
-                  c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
+                  c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if !(c.class._on_server_methods || []).include?('#{action}') && action != 'false'
                 end
               `}).fail(function(jqxhr, settings, exception){ window.console.log(exception); });`
             elsif $component_opts[:comp][:"#{comp_name}"] && $component_opts[:comp][:"#{comp_name}"][:class]
@@ -131,7 +131,7 @@ class Roda
                 c = $component_opts[:comp][:"#{comp_name}"][:class] = #{comp.class}.new(JSON.parse(Base64.decode64('#{options}')))
               end
               c.instance_variable_set(:@_cache, $component_opts[:comp][:"#{comp_name}"][:cache])
-              c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if action != 'false'
+              c.#{action}(JSON.parse(Base64.decode64('#{options}'))) if !(c.class._on_server_methods || []).include?('#{action}') && action != 'false'
             end
           EOF
 
