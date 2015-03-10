@@ -125,7 +125,7 @@ class Roda
               event_type: 'call',
               event_method: name.to_s,
               data: options
-            })
+            }) if $faye
           end
         end
 

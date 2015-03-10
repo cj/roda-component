@@ -93,7 +93,7 @@ class Roda
     def _initialize(scope = false)
       @_scope = scope if scope
 
-      if client? && !$component_opts[:faye][:"#{self.class._name}"]
+      if $faye && client? && !$component_opts[:faye][:"#{self.class._name}"]
         $component_opts[:faye][:"#{self.class._name}"] = true
 
         $faye.subscribe "/components/#{self.class._name}" do |msg|

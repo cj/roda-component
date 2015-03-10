@@ -19,6 +19,8 @@ if RUBY_ENGINE == 'opal'
         attr_accessor :disconnected, :online
 
         def initialize url
+          return false unless `(typeof Faye === 'function')`
+
           super `new Faye.Client(#{url})`
           set_header 'X-CSRF-TOKEN', Element.find('meta[name=_csrf]').attr('content')
           add_extension({
