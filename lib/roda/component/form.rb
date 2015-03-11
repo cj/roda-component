@@ -226,7 +226,7 @@ class Roda
               if client?
                 field_error_dom = DOM.new(`#{tmpl.dom}[0].outerHTML`)
               else
-                field_error_dom = DOM.new(tmpl.dom.to_html)
+                field_error_dom = DOM.new(tmpl.dom.to_xhtml)
               end
             else
               field_error_dom = DOM.new('<span class="field-error"><span>')
