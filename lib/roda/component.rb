@@ -327,10 +327,14 @@ class Roda
 
       # We need to save the oga dom and the raw html.
       # the reason we ave the raw html is so that we can use it client side.
-      def tmpl name, dom, remove = true
-        cache[:tmpl][name] = { dom: remove ? dom.remove : dom }
-        cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_xhtml
-        cache[:tmpl][name]
+      def tmpl name, dom = false, remove = true
+        if dom
+          cache[:tmpl][name] = { dom: remove ? dom.remove : dom }
+          cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_xhtml
+          cache[:tmpl][name]
+        elsif t = cache[:tmpl][name]
+          DOM.new t[:html]
+        end
       end
       alias :add_tmpl :tmpl
       alias :set_tmpl :tmpl
