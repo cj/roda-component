@@ -80,7 +80,7 @@ class Roda
           end
 
           # grab a copy of the cache
-          cache = comp.class.cache.dup
+          cache = comp.cache.dup
           # remove html and dom cache as we don't need that for the client
           cache.delete :html
           cache.delete :dom

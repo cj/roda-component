@@ -1,5 +1,5 @@
 class Roda
   class Component
-    VERSION = "0.1.57"
+    VERSION = "0.1.58"
   end
 end
