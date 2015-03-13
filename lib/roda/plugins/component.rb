@@ -175,6 +175,8 @@ class Roda
           end
 
           if trigger || action
+            comp_response = '' if js && !comp_response
+
             load_component_js comp, action, options
 
             if js && comp_response.is_a?(Roda::Component::DOM)
@@ -269,7 +271,14 @@ class Roda
 
           on self.class.component_route_regex do |comp, type, action|
             body = scope.request.body.read
-            data = body ? JSON.parse(body) : {}
+
+            begin
+              data = body ? JSON.parse(body) : {}
+            rescue
+              data = {}
+            end
+
+            data.merge! scope.request.params unless data.is_a? Array
 
             if data.is_a? Array
               data = {args: data}
