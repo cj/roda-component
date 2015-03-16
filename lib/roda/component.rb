@@ -31,16 +31,16 @@ unless RUBY_ENGINE == 'opal'
   module Nokogiri
     module XML
       class NodeSet
-        alias_method :original_to_xhtml, :to_xhtml
-        def to_xhtml *args
-          original_to_xhtml(*args).gsub("&#13;", "\r")
-        end
+        # alias_method :original_to_xhtml, :to_xhtml
+        # def to_xhtml *args
+        #   original_to_xhtml(*args).gsub("&#13;", "\r")
+        # end
       end
       class Node
-        alias_method :original_to_xhtml, :to_xhtml
-        def to_xhtml *args
-          original_to_xhtml(*args).gsub("&#13;", "\r")
-        end
+        # alias_method :original_to_xhtml, :to_xhtml
+        # def to_xhtml *args
+        #   original_to_xhtml(*args).gsub("&#13;", "\r")
+        # end
 
         private
 
