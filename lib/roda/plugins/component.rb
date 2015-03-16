@@ -80,7 +80,7 @@ class Roda
           end
 
           # grab a copy of the cache
-          cache = comp.class.cache.dup
+          cache = comp.cache.dup
           # remove html and dom cache as we don't need that for the client
           cache.delete :html
           cache.delete :dom
@@ -175,10 +175,12 @@ class Roda
           end
 
           if trigger || action
+            comp_response = '' if js && !comp_response
+
             load_component_js comp, action, options
 
             if js && comp_response.is_a?(Roda::Component::DOM)
-              comp_response = comp_response.to_html
+              comp_response = comp_response.to_xhtml
             end
 
             if comp_response.is_a?(String) && js
@@ -269,7 +271,14 @@ class Roda
 
           on self.class.component_route_regex do |comp, type, action|
             body = scope.request.body.read
-            data = body ? JSON.parse(body) : {}
+
+            begin
+              data = body ? JSON.parse(body) : {}
+            rescue
+              data = {}
+            end
+
+            data.merge! scope.request.params unless data.is_a? Array
 
             if data.is_a? Array
               data = {args: data}

@@ -1,15 +1,16 @@
 class Roda
   class Component
     class Events < Struct.new(:klass, :component_opts, :scope, :request)
-      def on name, options = {}, form_klass = false, extra_opts = false, &block
-        options = '' if options.empty? && (name.to_s == 'history_change' || name.to_s == 'ready')
+      def on name, options = false, form_klass = false, extra_opts = false, &block
 
-        if client? && options.is_a?(String)
+        if client? && (options.is_a?(String) || !options)
           class_name   = klass._name
           class_events = (events[class_name] ||= {})
           event        = (class_events[:_jquery_events] ||= [])
           event        << [block, class_name, options, form_klass, extra_opts, name]
-        elsif options.is_a?(Hash)
+        elsif options.is_a?(Hash) || !options
+          options = {} unless options
+
           limit_if = options.delete(:if) || []
           limit_if = [limit_if] unless limit_if.is_a? Array
 
@@ -93,9 +94,17 @@ class Roda
               Component::Instance.new(component(comp), scope).instance_exec form, evt.current_target, evt, &block
             end
           else
-            Document.on name, selector do |evt|
+            args = [name]
+            args << selector if selector
+
+            Document.on(*args) do |evt|
               el = evt.current_target
               Component::Instance.new(component(comp), scope).instance_exec el, evt, &block
+            end
+
+            if name =~ /ready/
+              el = Element.find(selector != '' ? selector : 'body')
+              Component::Instance.new(component(comp), scope).instance_exec el, &block
             end
           end
         end
@@ -114,7 +123,7 @@ class Roda
             response = Component::Instance.new(component(comp), scope).instance_exec options, &block
 
             if response.is_a? Roda::Component::DOM
-              content = response.to_xml
+              content = response.to_xhtml
             else
               content = response
             end
