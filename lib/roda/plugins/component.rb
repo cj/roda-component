@@ -26,6 +26,7 @@ class Roda
         opts[:path]            ||= 'components'
         opts[:route]           ||= 'components'
         opts[:debug]           ||= false
+        opts[:faye]            ||= true
         opts[:assets_route]    ||= 'assets/components'
         opts[:class]           ||= Roda::Component
         opts[:settings]        ||= {}
@@ -36,18 +37,20 @@ class Roda
         opts[:redis_namespace] ||= 'roda:component:'
         opts[:cache][:tmpl]    ||= {}
 
-        app.use(Faye::RackAdapter, {
-          mount: '/faye',
-          extensions: [
-            Roda::Component::Faye::CsrfProtection.new,
-            Roda::Component::Faye::ChannelManager.new
-          ],
-          engine: {
-            type:      Faye::Redis,
-            uri:       opts[:redis_uri],
-            namespace: opts[:redis_namespace]
-          }
-        })
+        if opts[:faye]
+          app.use(Faye::RackAdapter, {
+            mount: '/faye',
+            extensions: [
+              Roda::Component::Faye::CsrfProtection.new,
+              Roda::Component::Faye::ChannelManager.new
+            ],
+            engine: {
+              type:      Faye::Redis,
+              uri:       opts[:redis_uri],
+              namespace: opts[:redis_namespace]
+            }
+          })
+        end
 
         # Roda::Component::Ohm.redis = Redic.new opts[:redis_uri] || 'redis://localhost:6379'
 
