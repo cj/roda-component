@@ -265,7 +265,7 @@ class Roda
               x['selected'] = true if x['value'] == value.to_s
             end
           when 'input'
-            if element['type']=='radio'
+            if %w(radio checkbox).include? element['type']
               if element['value'] == value.to_s
                 element['checked'] = true
               else
