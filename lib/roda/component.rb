@@ -271,7 +271,8 @@ class Roda
             cache[:html] = yield
           end
 
-          cache[:dom] = DOM.new(cache[:html])
+          cache[:html] = cache[:html].gsub("\r\n", "\n")
+          cache[:dom]  = DOM.new(cache[:html])
         end
       end
 
