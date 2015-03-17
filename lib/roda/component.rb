@@ -34,14 +34,14 @@ unless RUBY_ENGINE == 'opal'
         # fix: this is really shity
         alias_method :original_to_html, :to_html
         def to_html *args
-          original_to_html(*args).gsub(/%7B(|;)/, "{").gsub(/%7D(|;)/, "}")
+          original_to_html(*args).gsub('%7B', "{").gsub('%7D', "}")
         end
       end
       class Node
         # fix: this is really shity
         alias_method :original_to_html, :to_html
         def to_html *args
-          original_to_html(*args).gsub(/%7B(|;)/, "{").gsub(/%7D(|;)/, "}")
+          original_to_html(*args).gsub('%7B', "{").gsub('%7D', "}")
         end
 
         private
