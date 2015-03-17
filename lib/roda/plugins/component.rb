@@ -64,7 +64,7 @@ class Roda
         end
 
         def loaded_component_js
-          request.env['loaded_component_js'] ||= []
+          request ? (request.env['loaded_component_js'] ||= []) : (@_loaded_component_js ||= [])
         end
 
         def load_component name, options = {}
@@ -183,7 +183,7 @@ class Roda
             load_component_js comp, action, options
 
             if js && comp_response.is_a?(Roda::Component::DOM)
-              comp_response = comp_response.to_xhtml
+              comp_response = comp_response.to_html
             end
 
             if comp_response.is_a?(String) && js

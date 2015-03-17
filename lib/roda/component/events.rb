@@ -123,7 +123,7 @@ class Roda
             response = Component::Instance.new(component(comp), scope).instance_exec options, &block
 
             if response.is_a? Roda::Component::DOM
-              content = response.to_xhtml
+              content = response.to_html
             else
               content = response
             end

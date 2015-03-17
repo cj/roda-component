@@ -31,16 +31,18 @@ unless RUBY_ENGINE == 'opal'
   module Nokogiri
     module XML
       class NodeSet
-        # alias_method :original_to_xhtml, :to_xhtml
-        # def to_xhtml *args
-        #   original_to_xhtml(*args).gsub("&#13;", "\r")
-        # end
+        # fix: this is really shity
+        alias_method :original_to_html, :to_html
+        def to_html *args
+          original_to_html(*args).gsub(/%7B(|;)/, "{").gsub(/%7D(|;)/, "}")
+        end
       end
       class Node
-        # alias_method :original_to_xhtml, :to_xhtml
-        # def to_xhtml *args
-        #   original_to_xhtml(*args).gsub("&#13;", "\r")
-        # end
+        # fix: this is really shity
+        alias_method :original_to_html, :to_html
+        def to_html *args
+          original_to_html(*args).gsub(/%7B(|;)/, "{").gsub(/%7D(|;)/, "}")
+        end
 
         private
 
@@ -271,7 +273,7 @@ class Roda
             cache[:html] = yield
           end
 
-          cache[:html] = cache[:html].gsub("\r\n", "\n")
+          cache[:html] = cache[:html]
           cache[:dom]  = DOM.new(cache[:html])
         end
       end
@@ -341,7 +343,7 @@ class Roda
       def tmpl name, dom = false, remove = true
         if dom
           cache[:tmpl][name] = { dom: remove ? dom.remove : dom }
-          cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_xhtml
+          cache[:tmpl][name][:html] = cache[:tmpl][name][:dom].to_html
           cache[:tmpl][name]
         elsif t = cache[:tmpl][name]
           DOM.new t[:html]
@@ -389,7 +391,7 @@ class Roda
     def dom
       if server?
         # TODO: duplicate cache[:dom] so we don't need to parse all the html again
-        @_dom ||= DOM.new(cache[:dom].dom.to_xhtml)
+        @_dom ||= DOM.new(cache[:dom].dom.to_html)
       else
         @_dom ||= DOM.new(Element)
       end
