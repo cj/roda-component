@@ -32,17 +32,17 @@ unless RUBY_ENGINE == 'opal'
     module XML
       class NodeSet
         # fix: this is really shity
-        alias_method :original_to_html, :to_html
-        def to_html *args
-          original_to_html(*args).gsub('%7B', "{").gsub('%7D', "}")
-        end
+        # alias_method :original_to_html, :to_html
+        # def to_html *args
+        #   original_to_html(*args).gsub('%7B', "{").gsub('%7D', "}")
+        # end
       end
       class Node
         # fix: this is really shity
-        alias_method :original_to_html, :to_html
-        def to_html *args
-          original_to_html(*args).gsub('%7B', "{").gsub('%7D', "}")
-        end
+        # alias_method :original_to_html, :to_html
+        # def to_html *args
+        #   original_to_html(*args).gsub('%7B', "{").gsub('%7D', "}")
+        # end
 
         private
 
