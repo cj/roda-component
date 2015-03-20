@@ -71,7 +71,15 @@ class Roda
                 name     = field['name']
                 value    = field['value']
 
-                params[name] = value
+                # Check to see if this is a multiple value form (form name
+                # should end in [])
+                if name =~ /\[\]$/
+                  name = name.gsub(/\[\]$/,'')
+                  params[name] = [] if params[name].nil?
+                  params[name].push value
+                else
+                  params[name] = value
+                end
               end
 
               params_obj = {}
