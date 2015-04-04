@@ -178,13 +178,13 @@ class Roda
           end
 
           if trigger || action
-            comp_response = '' if js && !comp_response
-
             load_component_js comp, action, options
 
             if js && comp_response.is_a?(Roda::Component::DOM)
               comp_response = comp_response.to_html
             end
+
+            comp_response = '' if js && !comp_response.is_a?(String)
 
             if comp_response.is_a?(String) && js
               comp_response << component_js

@@ -24,7 +24,7 @@ class Roda
         def set_values(atts)
           @_attributes = []
 
-          atts.each do |key, val|
+          (defined?(atts.attributes) ? atts.attributes : atts).each do |key, val|
             if respond_to?("#{key}=")
               send(:"#{key}=", val)
               @_attributes << key
@@ -95,7 +95,7 @@ class Roda
         @_attributes.set_attr_accessors _attr_accessors
         @_attributes.set_values _data
 
-        _data.each do |key, val|
+        (defined?(_data.attributes) ? _data.attributes : _data).each do |key, val|
           send("#{key}=", val)
         end
 
