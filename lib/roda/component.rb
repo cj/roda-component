@@ -330,7 +330,11 @@ class Roda
 
       # set the current roda app
       def set_app app
-        @_app = app.respond_to?(:new) ? app.new : app
+        begin
+          @_app = app.respond_to?(:new) ? app.new : app
+        rescue
+          @_app = app.respond_to?(:new) ? app.new('') : app
+        end
       end
 
       # roda app method
