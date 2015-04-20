@@ -263,7 +263,10 @@ class Roda
             path = scope.request.env['REQUEST_PATH']
 
             if path[/\.js\Z/]
-              run opal.sprockets
+              scope.response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'
+              p = path.sub('/assets/components/', '')
+              $compiled_opal ||= {}
+              $compiled_opal[p] ||= opal.sprockets[p].to_s
             elsif scope.component_opts[:debug]
               if path[/\.rb\Z/] && js_file = scope.request.env['PATH_INFO'].scan(/(.*\.map)/)
                 scope.request.env['PATH_INFO'] = path.gsub(js_file.last.first, '').gsub("/#{scope.component_opts[:assets_route]}", '')
