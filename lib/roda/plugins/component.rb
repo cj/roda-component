@@ -110,6 +110,7 @@ class Roda
             if !$component_opts[:comp][:"#{comp_name}"]
               $component_opts[:faye] ||= {}
               $component_opts[:comp][:"#{comp_name}"] = {cache: {}}
+              `jQuery.ajaxSetup({ cache: true })`
               `$.getScript("/#{component_opts[:assets_route]}#{file_path}").done(function(){`
                 if action != 'false'
                   c = $component_opts[:comp][:"#{comp_name}"][:class] = #{comp.class}.new
@@ -264,6 +265,7 @@ class Roda
 
             if path[/\.js\Z/]
               scope.response.headers["Content-Type"] = 'application/javascript; charset=UTF-8'
+              scope.response.headers["Expires"] = (Time.now + 1.hour).utc.rfc2822
               p = path.sub('/assets/components/', '')
               $compiled_opal ||= {}
               $compiled_opal[p] ||= opal.sprockets[p].to_s
